@@ -24,6 +24,19 @@ public sealed class CommandDescriptor
     /// <summary>Group/category the command is listed under in the menu.</summary>
     public required string Group { get; init; }
 
+    /// <summary>
+    /// Optional Material Design Icons glyph (a single code point, e.g. <c>"A"</c>)
+    /// shown next to the command in the command picker. Null falls back to the
+    /// category's icon. Purely cosmetic — never persisted.
+    /// </summary>
+    public string? Icon { get; init; }
+
+    /// <summary>
+    /// Optional one-line description shown as the command's subtitle in the picker.
+    /// Null shows no subtitle. Purely cosmetic — never persisted.
+    /// </summary>
+    public string? Description { get; init; }
+
     /// <summary>Parameter placeholder template, e.g. <c>({SceneName})</c>.
     /// Null when the command takes no parameters.</summary>
     public string? ParameterTemplate { get; init; }

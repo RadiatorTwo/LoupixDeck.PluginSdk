@@ -27,6 +27,15 @@ public abstract class LoupixPlugin
     public abstract IEnumerable<IPluginCommand> GetCommands();
 
     /// <summary>
+    /// Returns descriptors for this plugin's command groups (categories), giving
+    /// each a card icon, description and section in the command picker. Optional:
+    /// groups without a descriptor fall back to a generic icon and the
+    /// <see cref="CommandGroupSection.Plugins"/> section. Defaults to none.
+    /// </summary>
+    public virtual IReadOnlyList<CommandGroupDescriptor> GetCommandGroups() =>
+        Array.Empty<CommandGroupDescriptor>();
+
+    /// <summary>
     /// Returns the side-strip providers this plugin contributes (renderers a user can
     /// bind to a Razer side display strip in plugin-override mode). The host collects
     /// these after <see cref="Initialize"/>, alongside <see cref="GetCommands"/>.
