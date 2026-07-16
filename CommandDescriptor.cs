@@ -5,6 +5,15 @@ public sealed class CommandParameter(string name, Type parameterType)
 {
     public string Name { get; } = name;
     public Type ParameterType { get; } = parameterType;
+
+    /// <summary>
+    /// Optional command-defined default value for this parameter. When set, the host
+    /// pre-fills the command's settings editor with it as the command is inserted into a
+    /// sequence, so an adjustment command (e.g. a volume step) comes up with sensible,
+    /// command-specific defaults instead of a blank/type default. Null means no default.
+    /// Additive since SDK 1.17.0 — plugins built against an earlier SDK simply leave it null.
+    /// </summary>
+    public string? DefaultValue { get; init; }
 }
 
 /// <summary>
