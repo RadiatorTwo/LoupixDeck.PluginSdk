@@ -39,6 +39,11 @@ interfaces, and a few value types. Everything lives in the
 | `RotaryOverride` | [Folder Navigation](Advanced-Folders#rotaryoverride) | Per-encoder behavior while a folder is open. |
 | `IExclusiveModeProvider` | [Exclusive Mode](Advanced-Exclusive-Mode#iexclusivemodeprovider) | Full-device takeover (HUD, screensaver, video). |
 | `ExclusiveRenderMode` | [Exclusive Mode](Advanced-Exclusive-Mode#exclusiverendermode) | How the host pushes a provider's frames (full screen / grid / dirty tiles / single tile). |
+| `IFullDisplayRenderer` | [Full-Display Renderer](Advanced-Full-Display-Renderer#ifulldisplayrenderer) | Streams raw BGRA frames to the whole display (video, visualizers). |
+| `IFullDisplayRenderSession` | [Full-Display Renderer](Advanced-Full-Display-Renderer#requesting-the-display) | Ownership handle for an active full-display takeover. |
+| `FullDisplaySurface` | [Full-Display Renderer](Advanced-Full-Display-Renderer#the-frame-buffer) | Geometry and pixel layout of the frame buffer. |
+| `FullDisplayFrameContext` | [Full-Display Renderer](Advanced-Full-Display-Renderer#timing) | Per-frame timing snapshot. |
+| `FullDisplayFrameResult` | [Full-Display Renderer](Advanced-Full-Display-Renderer#renderframe-must-be-fast) | What the renderer did this tick (skip / frame / final). |
 | `IPluginSettingsPage` | [Settings Page](Advanced-Settings-Page#ipluginsettingspage) | Exposes user-editable settings. |
 | `PluginSettingDescriptor` | [Settings Page](Advanced-Settings-Page#pluginsettingdescriptor) | One editable setting. |
 | `PluginSettingKind` | [Settings Page](Advanced-Settings-Page#pluginsettingkind) | Editor kind enum. |

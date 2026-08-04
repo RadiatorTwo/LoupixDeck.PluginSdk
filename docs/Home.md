@@ -23,6 +23,7 @@ directory, and is loaded dynamically at startup.
   - [Dynamic Menus](Advanced-Menus) — `IMenuContributor`, `MenuNode`
   - [Folder Navigation](Advanced-Folders) — `IFolderProvider`, `FolderEntry`, rotary overrides
   - [Exclusive Mode](Advanced-Exclusive-Mode) — `IExclusiveModeProvider`, `ExclusiveRenderMode`, HUD/screensaver takeovers
+  - [Full-Display Renderer](Advanced-Full-Display-Renderer) — `IFullDisplayRenderer`, raw BGRA frames for video/visualizers
   - [Settings Page](Advanced-Settings-Page) — `IPluginSettingsPage`, schema, actions
 - Operations
   - [Packaging & Distribution](Packaging-and-Distribution)

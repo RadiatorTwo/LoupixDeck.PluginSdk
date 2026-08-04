@@ -13,6 +13,7 @@
 - [Dynamic menus](Advanced-Menus)
 - [Folder navigation](Advanced-Folders)
 - [Exclusive mode](Advanced-Exclusive-Mode)
+- [Full-display renderer](Advanced-Full-Display-Renderer)
 - [Settings page](Advanced-Settings-Page)
 
 **Operations**
