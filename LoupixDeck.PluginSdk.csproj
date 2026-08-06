@@ -21,12 +21,12 @@
     <PackageOutputPath>$(MSBuildProjectDirectory)\nupkg</PackageOutputPath>
 
     <PackageId>LoupixDeck.PluginSdk</PackageId>
-    <Version>1.18.0</Version>
+    <Version>1.19.0</Version>
     <!-- AssemblyVersion stays fixed across compatible (1.x) releases so the
          plugin load context resolves one shared SDK assembly regardless of
          which 1.x package a plugin was built against. -->
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
-    <FileVersion>1.18.0.0</FileVersion>
+    <FileVersion>1.19.0.0</FileVersion>
     <Authors>RadiatorTwo</Authors>
     <Description>SDK for building LoupixDeck plugins: contracts shared between the LoupixDeck core and dynamically loaded integration plugins. Contains no application logic.</Description>
     <PackageProjectUrl>https://github.com/RadiatorTwo/LoupixDeck</PackageProjectUrl>
