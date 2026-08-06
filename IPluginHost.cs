@@ -75,6 +75,17 @@ public interface IPluginHost
     bool IsInExclusiveMode { get; }
 
     /// <summary>
+    /// Requests exclusive ownership of the ENTIRE active-device display for raw BGRA frame streaming
+    /// driven by <paramref name="renderer"/>. Returns a session handle, or null when the display is
+    /// already owned (another full-display renderer, or exclusive mode is active) — no stealing,
+    /// mirroring <see cref="RequestExclusiveMode"/>. The host calls
+    /// <see cref="IFullDisplayRenderer.OnStart"/> before returning a non-null session and registers
+    /// the renderer on the device's animation scheduler. Release the returned session (or the
+    /// plugin's <see cref="LoupixPlugin.Shutdown"/>) to stop streaming and restore the normal page.
+    /// </summary>
+    IFullDisplayRenderSession? RequestFullDisplayRenderer(IFullDisplayRenderer renderer);
+
+    /// <summary>
     /// Returns the names of all states defined on the (first) stateful button bound to
     /// <paramref name="commandName"/>, in list order, or an empty list if none is found.
     /// Use together with <see cref="SetActiveState"/> to drive an externally controlled button.

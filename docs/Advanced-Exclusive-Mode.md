@@ -158,3 +158,13 @@ public sealed class SpeedHud : IExclusiveModeProvider
   strategy at runtime if needed (e.g. `Grid` on entry, `DirtyTiles` once steady).
 - **Pick the cheapest mode that looks right.** `DirtyTiles` for live dashboards,
   `FullScreen` or `Grid` for a screensaver, `SingleTile` for one-button media.
+- **Start it from a command, not automatically.** Enter exclusive mode in response
+  to an explicit command the user runs (an `IPluginCommand`), not implicitly when
+  the plugin loads/initializes or a game is detected. This keeps two exclusive-mode
+  plugins from fighting over the device and lets one plugin expose several different
+  takeovers (one start command each).
+- **A profile/workspace switch ends the takeover.** The host calls `OnExit` and
+  restores the normal page when the active profile or workspace changes (the
+  takeover belonged to the workspace being left). It does **not** auto-restart —
+  the user re-enters by running your start command again. Keep `OnExit` cheap and
+  idempotent; don't try to re-enter from inside it.
