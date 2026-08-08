@@ -43,4 +43,12 @@ public abstract class LoupixPlugin
     /// </summary>
     public virtual IEnumerable<ISideStripProvider> GetSideStripProviders() =>
         Array.Empty<ISideStripProvider>();
+
+    /// <summary>
+    /// Returns the screensaver providers this plugin contributes (idle-triggered full-display
+    /// renderers a user can select in Settings → Screensaver). The host collects these after
+    /// <see cref="Initialize"/>, alongside <see cref="GetCommands"/>. Defaults to none.
+    /// </summary>
+    public virtual IEnumerable<IScreensaverProvider> GetScreensaverProviders() =>
+        Array.Empty<IScreensaverProvider>();
 }
