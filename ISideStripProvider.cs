@@ -150,3 +150,48 @@ public interface ISegmentStripSession
     /// </summary>
     bool RenderSegment(int rotaryIndex, IRenderCanvas canvas);
 }
+
+/// <summary>
+/// Optional per-frame animation capability, implemented by the session of an
+/// <see cref="ISideStripProvider"/> alongside <see cref="ISideStripSession"/>. A session that
+/// implements this is driven by the host's central animation scheduler at <see cref="TargetFps"/>
+/// instead of only redrawing when it raises <see cref="ISideStripSession.StripChanged"/> — the strip
+/// analogue of <see cref="IAnimatedDisplayCommand"/> for touch buttons.
+///
+/// <see cref="ISideStripSession.RenderStrip"/> stays mandatory and must draw the CURRENT animation
+/// state: the host uses it for the authoritative repaint on attachment, on a rotary page change, and
+/// after a takeover (screensaver, full-display renderer, exclusive mode, folder navigation,
+/// device-off) releases the strip again.
+///
+/// For an animated session <see cref="ISideStripSession.StripChanged"/> no longer triggers a full
+/// redraw; it means "render the next frame now" and also resumes a session that had returned
+/// <see cref="AnimationFrameInfo.Final"/>.
+///
+/// Backward compatibility: this is an independent, optional interface. Sessions that don't implement
+/// it keep the existing event-driven behavior exactly.
+/// </summary>
+public interface IAnimatedSideStripSession
+{
+    /// <summary>
+    /// Desired frame rate. The host raises its global animation limit for the duration of the
+    /// attachment when this asks for more than the current limit, and lowers the per-strip push
+    /// floor accordingly; the rate is still clamped to the host's maximum. Read
+    /// <see cref="AnimationFrameContext.EffectiveFps"/> for the rate actually used. A value
+    /// &lt;= 0 means "use the host's default limit".
+    /// </summary>
+    int TargetFps { get; }
+
+    /// <summary>
+    /// Draws one animation frame onto the host-provided <paramref name="canvas"/> (the session's
+    /// strip geometry, i.e. 60×270 on the Razer). Called off the UI thread; must be fast and
+    /// synchronous. Return <see cref="AnimationFrameInfo.Skip"/> when nothing changed (the host
+    /// skips the device push), or <see cref="AnimationFrameInfo.Frame"/> /
+    /// <see cref="AnimationFrameInfo.Final"/> with a monotonic frame number the host uses to
+    /// dirty-check the push.
+    ///
+    /// A frame already in flight may overlap <see cref="IDisposable.Dispose"/> on detach; the host
+    /// guarantees only that no NEW frame starts once detach has run. Keep the render free of state
+    /// that Dispose tears down, or guard it.
+    /// </summary>
+    AnimationFrameInfo RenderStripFrame(IRenderCanvas canvas, AnimationFrameContext frame);
+}
