@@ -20,5 +20,5 @@ public sealed class PluginSettingDescriptor
     public string Description { get; init; } = string.Empty;
 
     /// <summary>Value used when the key is absent from the settings store.</summary>
-    public object DefaultValue { get; init; }
+    public object? DefaultValue { get; init; }
 }
