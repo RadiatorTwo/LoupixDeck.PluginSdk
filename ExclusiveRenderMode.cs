@@ -32,5 +32,14 @@ public enum ExclusiveRenderMode
     /// Draw a single 90x90 slot (see <see cref="IExclusiveModeProvider.SingleTileSlot"/>),
     /// framebuffer only, no DRAW refresh. Mirrors streaming a GIF/video onto one button.
     /// </summary>
-    SingleTile = 3
+    SingleTile = 3,
+
+    /// <summary>
+    /// The host pushes nothing at all. The provider owns every pixel of the display and
+    /// writes its own frames to the device, while exclusive mode still suppresses the
+    /// normal page rendering and routes the hardware input to the provider. Without this,
+    /// the host composites the (possibly empty) touch entries over whatever the provider
+    /// just drew. Use it for diagnostics and takeovers that render outside the slot model.
+    /// </summary>
+    None = 4
 }
