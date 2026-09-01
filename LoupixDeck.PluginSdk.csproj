@@ -1,7 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <!-- Multi-targeted so plugins that still target net9.0 can restore this
+         package. LoupixDeck's own Directory.Build.props (inherited when this
+         repo is checked out as a submodule) sets the singular TargetFramework,
+         which would otherwise win over TargetFrameworks and collapse the build
+         back to a single TFM, so clear it explicitly here. -->
+    <TargetFrameworks>net9.0;net10.0</TargetFrameworks>
+    <TargetFramework></TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>default</LangVersion>
