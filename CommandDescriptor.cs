@@ -54,6 +54,16 @@ public sealed class CommandDescriptor
     public IReadOnlyList<CommandParameter> Parameters { get; init; } = [];
 
     /// <summary>
+    /// The button states this command brings along, in order. When non-empty the host
+    /// materializes exactly these states on a button the command is inserted into, locks
+    /// state management in the editor and reports the rendered state through
+    /// <see cref="CommandContext.StateName"/>; the plugin drives the active state via
+    /// <see cref="IPluginHost.SetActiveButtonState"/>. Empty (the default) keeps the
+    /// pre-1.21.0 behaviour: states stay entirely user-managed.
+    /// </summary>
+    public IReadOnlyList<ButtonStateDescriptor> States { get; init; } = [];
+
+    /// <summary>
     /// When true the command is not listed as a plain leaf in the command
     /// selection menu — it is instead surfaced through a dynamic submenu the
     /// plugin builds via <see cref="IMenuContributor"/> (e.g. one entry per OBS
