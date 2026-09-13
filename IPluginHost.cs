@@ -14,6 +14,13 @@ public interface IPluginHost
     /// <summary>Isolated settings store for the owning plugin.</summary>
     IPluginSettings Settings { get; }
 
+    /// <summary>
+    /// Key grid of the active device. Use this rather than <see cref="FolderLayout"/> when a
+    /// folder provider computes slot indices — the constants there describe a 5x3 device and
+    /// three of the supported models are 4x3.
+    /// </summary>
+    FolderGridInfo FolderGrid { get; }
+
     /// <summary>The device currently driven by the host, or null if none.</summary>
     DeviceInfo? ActiveDevice { get; }
 
