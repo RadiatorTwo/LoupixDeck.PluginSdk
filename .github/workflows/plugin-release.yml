@@ -1,0 +1,169 @@
+name: Plugin Store Release
+
+# Reusable workflow for LoupixDeck plugin repositories (issue #234 in RadiatorTwo/LoupixDeck).
+# It builds the plugin against this SDK, packs it in the Plugin Store format and attaches the
+# files to the GitHub release that triggered the caller:
+#
+#   <id>-<version>-<platform>.zip   plugin.json and the plugin files at the zip root
+#   plugin.json                     the manifest, so the store can read it without the zip
+#   SHA256SUMS                      sha256sum output for both files above
+#
+# <platform> follows plugin.json: "Windows" -> windows, "Linux" -> linux, "All" (or none) -> any.
+#
+# Caller (.github/workflows/release.yml in the plugin repository):
+#
+#   on:
+#     release:
+#       types: [published]
+#     workflow_dispatch:
+#   permissions:
+#     contents: write
+#   jobs:
+#     release:
+#       uses: RadiatorTwo/LoupixDeck.PluginSdk/.github/workflows/plugin-release.yml@master
+#
+# A manual run (workflow_dispatch) only builds the files as an artifact.
+
+on:
+  workflow_call:
+    inputs:
+      project:
+        description: 'Plugin project, relative to the repository root. Default: <repository name>.csproj'
+        required: false
+        type: string
+        default: ''
+      dotnet-version:
+        description: '.NET SDK used for the build'
+        required: false
+        type: string
+        default: '10.0.x'
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    name: Build and package
+    runs-on: ubuntu-latest
+
+    steps:
+      # Plugin and SDK side by side, the layout every plugin's nuget.config expects.
+      - name: Checkout plugin
+        uses: actions/checkout@v5
+        with:
+          path: src/${{ github.event.repository.name }}
+
+      - name: Checkout Plugin SDK
+        uses: actions/checkout@v5
+        with:
+          repository: RadiatorTwo/LoupixDeck.PluginSdk
+          path: src/LoupixDeck.PluginSdk
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ inputs.dotnet-version }}
+
+      - name: Build Plugin SDK package
+        run: dotnet build src/LoupixDeck.PluginSdk -c Release
+
+      # Plugin nuget.config files reference the SDK feed either as ..\LoupixDeck.PluginSdk\nupkg or
+      # as ..\LoupixDeck\LoupixDeck.PluginSdk\nupkg. A missing local source is a hard error, so the
+      # feed is mirrored to the nested path too.
+      - name: Mirror SDK feed for nested-path plugins
+        run: |
+          mkdir -p src/LoupixDeck/LoupixDeck.PluginSdk
+          cp -r src/LoupixDeck.PluginSdk/nupkg src/LoupixDeck/LoupixDeck.PluginSdk/nupkg
+
+      - name: Read and check plugin.json
+        id: manifest
+        env:
+          REPO_NAME: ${{ github.event.repository.name }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          manifest="src/$REPO_NAME/plugin.json"
+          id=$(jq -r '.id // empty' "$manifest")
+          version=$(jq -r '.version // empty' "$manifest")
+          sdk=$(jq -r '.sdkVersion // empty' "$manifest")
+          entry=$(jq -r '.entryAssembly // empty' "$manifest")
+          platform=$(jq -r '.platform // "All"' "$manifest")
+
+          for field in id version sdk entry; do
+            if [ -z "${!field}" ]; then
+              echo "plugin.json is missing '$field'." >&2
+              exit 1
+            fi
+          done
+
+          # The store only compares plain major.minor.patch versions.
+          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "plugin.json version '$version' is not major.minor.patch." >&2
+            exit 1
+          fi
+
+          if [ -n "$RELEASE_TAG" ] && [ "$RELEASE_TAG" != "v$version" ]; then
+            echo "Release tag '$RELEASE_TAG' does not match plugin.json version 'v$version'." >&2
+            exit 1
+          fi
+
+          case "${platform,,}" in
+            windows) suffix=windows ;;
+            linux) suffix=linux ;;
+            all|"") suffix=any ;;
+            *) echo "Unknown platform '$platform' in plugin.json." >&2; exit 1 ;;
+          esac
+
+          {
+            echo "id=$id"
+            echo "version=$version"
+            echo "entry=$entry"
+            echo "package=$id-$version-$suffix.zip"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Build plugin
+        env:
+          REPO_NAME: ${{ github.event.repository.name }}
+          PROJECT: ${{ inputs.project }}
+        run: |
+          set -euo pipefail
+          project="${PROJECT:-$REPO_NAME.csproj}"
+          dotnet build "src/$REPO_NAME/$project" -c Release -o build /p:DebugSymbols=false /p:DebugType=none
+
+      # Same selection the app release used when it still bundled plugins: everything the build
+      # produced except symbols and runtimeconfig files. The SDK itself is never copied (the plugin
+      # references it with ExcludeAssets=runtime); the host provides it.
+      - name: Package
+        env:
+          REPO_NAME: ${{ github.event.repository.name }}
+          ENTRY: ${{ steps.manifest.outputs.entry }}
+          PACKAGE: ${{ steps.manifest.outputs.package }}
+        run: |
+          set -euo pipefail
+          mkdir -p staging dist
+          find build -mindepth 1 -maxdepth 1 ! -name '*.pdb' ! -name '*.runtimeconfig.json' -exec cp -r {} staging/ \;
+          rm -f staging/LoupixDeck.PluginSdk.dll
+          cp "src/$REPO_NAME/plugin.json" staging/plugin.json
+
+          if [ ! -f "staging/$ENTRY" ]; then
+            echo "Entry assembly '$ENTRY' is missing from the build output." >&2
+            exit 1
+          fi
+
+          (cd staging && zip -r -X "../dist/$PACKAGE" .)
+          cp "src/$REPO_NAME/plugin.json" dist/plugin.json
+          (cd dist && sha256sum "$PACKAGE" plugin.json > SHA256SUMS)
+          cat dist/SHA256SUMS
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ steps.manifest.outputs.id }}-${{ steps.manifest.outputs.version }}
+          path: dist
+
+      - name: Attach to the release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: gh release upload "$RELEASE_TAG" dist/* --clobber --repo "$GITHUB_REPOSITORY"
