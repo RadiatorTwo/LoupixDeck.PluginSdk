@@ -18,6 +18,11 @@ namespace LoupixDeck.PluginSdk;
 /// rewrites a dial that was configured from it.
 /// </para>
 /// <para>
+/// The descriptors are re-read every time a preset surface is built, so the set
+/// may follow live state: a plugin that owns devices normally emits one preset
+/// per device, and one that appears or disappears is picked up on its own.
+/// </para>
+/// <para>
 /// The host validates every descriptor and silently drops the ones it cannot
 /// offer — an invalid preset never prevents the plugin from loading. A preset is
 /// dropped when <see cref="Id"/> or <see cref="Name"/> is blank, when two

@@ -38,15 +38,21 @@ public abstract class LoupixPlugin
     /// <summary>
     /// Returns the dial presets this plugin contributes: ready-made rotary
     /// configurations the user can apply in one step, listed next to the host's
-    /// built-in presets. The host collects these after <see cref="Initialize"/>,
-    /// alongside <see cref="GetCommands"/>, and re-reads them whenever the
-    /// plugin is enabled, disabled or reloaded. Defaults to none.
+    /// built-in presets. Defaults to none.
     /// </summary>
     /// <remarks>
+    /// Called every time a preset surface is built, not once per load, so the
+    /// list may depend on live state — one preset per audio endpoint, per scene,
+    /// per sensor. Return promptly: unlike
+    /// <see cref="IMenuContributor.GetMenuNodes"/> this is synchronous and the
+    /// host does not apply a timeout, so a blocking implementation stalls the UI
+    /// that asked. Cache whatever is expensive behind it.
+    /// <para>
     /// The host validates each descriptor and drops the ones it cannot offer —
     /// an invalid preset never keeps the plugin from loading. Contributed
     /// presets are read-only for the user. See
     /// <see cref="DialPresetDescriptor"/>.
+    /// </para>
     /// </remarks>
     public virtual IEnumerable<DialPresetDescriptor> GetDialPresets() =>
         Array.Empty<DialPresetDescriptor>();
