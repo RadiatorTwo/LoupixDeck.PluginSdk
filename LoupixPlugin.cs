@@ -36,6 +36,22 @@ public abstract class LoupixPlugin
         Array.Empty<CommandGroupDescriptor>();
 
     /// <summary>
+    /// Returns the dial presets this plugin contributes: ready-made rotary
+    /// configurations the user can apply in one step, listed next to the host's
+    /// built-in presets. The host collects these after <see cref="Initialize"/>,
+    /// alongside <see cref="GetCommands"/>, and re-reads them whenever the
+    /// plugin is enabled, disabled or reloaded. Defaults to none.
+    /// </summary>
+    /// <remarks>
+    /// The host validates each descriptor and drops the ones it cannot offer —
+    /// an invalid preset never keeps the plugin from loading. Contributed
+    /// presets are read-only for the user. See
+    /// <see cref="DialPresetDescriptor"/>.
+    /// </remarks>
+    public virtual IEnumerable<DialPresetDescriptor> GetDialPresets() =>
+        Array.Empty<DialPresetDescriptor>();
+
+    /// <summary>
     /// Returns the side-strip providers this plugin contributes (renderers a user can
     /// bind to a Razer side display strip in plugin-override mode). The host collects
     /// these after <see cref="Initialize"/>, alongside <see cref="GetCommands"/>.
