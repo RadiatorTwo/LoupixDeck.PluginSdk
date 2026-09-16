@@ -8,6 +8,11 @@ name: Plugin Store Release
 #   plugin.json                     the manifest, so the store can read it without the zip
 #   SHA256SUMS                      sha256sum output for both files above
 #
+# It also prints the plugin's plugin-store.json entry to the job summary and puts it in the build
+# artifact as store-entry.json, ready to be pasted into a pull request against the LoupixDeck
+# repository. The store reads the published version from that file, so a release only reaches users
+# once its entry is merged.
+#
 # <platform> follows plugin.json: "Windows" -> windows, "Linux" -> linux, "All" (or none) -> any.
 #
 # Caller (.github/workflows/release.yml in the plugin repository):
@@ -117,7 +122,9 @@ jobs:
           {
             echo "id=$id"
             echo "version=$version"
+            echo "sdk=$sdk"
             echo "entry=$entry"
+            echo "platform=$suffix"
             echo "package=$id-$version-$suffix.zip"
           } >> "$GITHUB_OUTPUT"
 
@@ -155,11 +162,73 @@ jobs:
           (cd dist && sha256sum "$PACKAGE" plugin.json > SHA256SUMS)
           cat dist/SHA256SUMS
 
+      # The Plugin Store installs from plugin-store.json in the LoupixDeck repository, which carries the
+      # published version of every plugin. That entry is written here, ready to paste: the maintainer copies
+      # it from the job summary (or from store-entry.json in the build artifact) into a pull request. No token
+      # and no write access to the LoupixDeck repository are involved.
+      - name: Emit the plugin store entry
+        env:
+          ID: ${{ steps.manifest.outputs.id }}
+          VERSION: ${{ steps.manifest.outputs.version }}
+          SDK: ${{ steps.manifest.outputs.sdk }}
+          PLATFORM: ${{ steps.manifest.outputs.platform }}
+          PACKAGE: ${{ steps.manifest.outputs.package }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          PUBLISHED_AT: ${{ github.event.release.published_at }}
+        run: |
+          set -euo pipefail
+          tag="${RELEASE_TAG:-v$VERSION}"
+          published="${PUBLISHED_AT:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}"
+          sha=$(awk -v file="$PACKAGE" '$2 == file || $2 == "*"file { print $1 }' dist/SHA256SUMS)
+
+          jq -n \
+            --arg version "$VERSION" \
+            --arg tag "$tag" \
+            --arg published "$published" \
+            --arg sdk "$SDK" \
+            --arg notes "https://github.com/$GITHUB_REPOSITORY/releases/tag/$tag" \
+            --arg platform "$PLATFORM" \
+            --arg file "$PACKAGE" \
+            --arg url "https://github.com/$GITHUB_REPOSITORY/releases/download/$tag/$PACKAGE" \
+            --arg sha "$sha" \
+            '{
+               version: $version,
+               tag: $tag,
+               publishedAt: $published,
+               sdkVersion: $sdk,
+               releaseNotesUrl: $notes,
+               packages: [ { platform: $platform, fileName: $file, downloadUrl: $url, sha256: $sha } ]
+             }' > store-entry.json
+
+          {
+            echo "## Plugin Store entry"
+            echo
+            echo "Paste this as the \`release\` of the **$ID** entry in"
+            echo "[plugin-store.json](https://github.com/RadiatorTwo/LoupixDeck/blob/master/plugin-store.json)"
+            echo "and open a pull request. The pull request is validated automatically."
+            echo
+            if [ "$GITHUB_EVENT_NAME" != "release" ]; then
+              echo "> This run is not a release: the tag and the download URL are what they *will* be once"
+              echo "> \`$tag\` is published."
+              echo
+            fi
+            echo '```json'
+            cat store-entry.json
+            echo '```'
+            echo
+            echo "A plugin that ships a Windows and a Linux package publishes one per run; merge both into"
+            echo "the same \`packages\` array."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # store-entry.json travels in the artifact, not in dist: only the three files in dist are attached
+      # to the release.
       - name: Upload build artifact
         uses: actions/upload-artifact@v7
         with:
           name: ${{ steps.manifest.outputs.id }}-${{ steps.manifest.outputs.version }}
-          path: dist
+          path: |
+            dist
+            store-entry.json
 
       - name: Attach to the release
         if: github.event_name == 'release'
