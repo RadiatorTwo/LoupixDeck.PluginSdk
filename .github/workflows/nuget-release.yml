@@ -75,7 +75,11 @@ jobs:
           fi
 
       - name: Pack
-        run: dotnet pack LoupixDeck.PluginSdk.csproj -c Release -o artifacts
+        # GeneratePackageOnBuild is on for the local dev feed, and with it set, pack no longer
+        # builds the project — on a clean checkout that fails with NU5026, the assembly to be
+        # packed not being on disk. Turning it off for this one invocation makes pack build
+        # first, as it normally would.
+        run: dotnet pack LoupixDeck.PluginSdk.csproj -c Release -o artifacts -p:GeneratePackageOnBuild=false
 
       - name: Upload the package as a build artifact
         uses: actions/upload-artifact@v4
