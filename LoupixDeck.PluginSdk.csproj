@@ -37,6 +37,8 @@
     <Description>SDK for building LoupixDeck plugins: contracts shared between the LoupixDeck core and dynamically loaded integration plugins. Contains no application logic.</Description>
     <PackageProjectUrl>https://github.com/RadiatorTwo/LoupixDeck</PackageProjectUrl>
     <RepositoryUrl>https://github.com/RadiatorTwo/LoupixDeck.PluginSdk</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>loupixdeck;loupedeck;plugin;sdk;deck;avalonia</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
