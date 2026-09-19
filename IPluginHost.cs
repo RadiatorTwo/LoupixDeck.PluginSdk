@@ -15,6 +15,23 @@ public interface IPluginHost
     IPluginSettings Settings { get; }
 
     /// <summary>
+    /// The active UI language code, for example "en" or "de". The user can switch the
+    /// language while the plugin runs, so read it when the value is needed rather than
+    /// caching it at load time.
+    /// </summary>
+    string CurrentLanguage { get; }
+
+    /// <summary>
+    /// Translates free-form English text against the <c>strings.&lt;code&gt;.json</c> files the
+    /// owning plugin ships next to its manifest, falling back to the plugin's English file,
+    /// the host catalog, and finally the text itself. Use it for text the plugin builds while
+    /// running; text in descriptors is translated by the host through the same files without
+    /// any plugin code. Safe to call from any thread. Text the plugin has already drawn keeps
+    /// its old language until the plugin draws it again.
+    /// </summary>
+    string Tr(string english);
+
+    /// <summary>
     /// Key grid of the active device. Use this rather than <see cref="FolderLayout"/> when a
     /// folder provider computes slot indices — the constants there describe a 5x3 device and
     /// three of the supported models are 4x3.

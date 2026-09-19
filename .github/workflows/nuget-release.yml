@@ -1,0 +1,96 @@
+name: NuGet Release
+
+# Publishes LoupixDeck.PluginSdk to nuget.org when a GitHub release is published.
+#
+# Tag convention: v<Version>, matching <Version> in LoupixDeck.PluginSdk.csproj (v1.24.0 for
+# 1.24.0). The tag is checked against the csproj before anything is pushed — a NuGet version is
+# immutable once it is on the feed, so a mistyped tag has to fail the run, not ship.
+#
+# A manual run (workflow_dispatch) packs the package and uploads it as a build artifact without
+# pushing, which is how a release is rehearsed.
+#
+# Requires the repository secret NUGET_API_KEY: an nuget.org API key scoped to
+# "Push new packages and package versions" for LoupixDeck.PluginSdk.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    name: Pack and publish
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      # The project multi-targets net9.0;net10.0, so both SDKs are installed.
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: |
+            9.0.x
+            10.0.x
+
+      - name: Read the package version
+        id: version
+        run: |
+          set -euo pipefail
+          version=$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' LoupixDeck.PluginSdk.csproj | head -1)
+          if [ -z "$version" ]; then
+            echo "No <Version> found in LoupixDeck.PluginSdk.csproj." >&2
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Package version: $version"
+
+      - name: Check the tag against the package version
+        if: github.event_name == 'release'
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          tagged="${RELEASE_TAG#v}"
+          if [ "$tagged" != "$VERSION" ]; then
+            echo "Release tag '$RELEASE_TAG' does not match <Version> '$VERSION'." >&2
+            echo "Tag a release as v$VERSION, or bump the csproj first." >&2
+            exit 1
+          fi
+
+      - name: Pack
+        run: dotnet pack LoupixDeck.PluginSdk.csproj -c Release -o artifacts
+
+      - name: Upload the package as a build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: LoupixDeck.PluginSdk-${{ steps.version.outputs.version }}
+          path: artifacts/*.nupkg
+
+      - name: Push to nuget.org
+        if: github.event_name == 'release'
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "$NUGET_API_KEY" ]; then
+            echo "The repository secret NUGET_API_KEY is not set." >&2
+            exit 1
+          fi
+          dotnet nuget push artifacts/*.nupkg \
+            --source https://api.nuget.org/v3/index.json \
+            --api-key "$NUGET_API_KEY" \
+            --skip-duplicate
+
+      # The exact file that went to nuget.org, attached to the tag it was built from.
+      - name: Attach the package to the release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: gh release upload "$RELEASE_TAG" artifacts/*.nupkg --clobber

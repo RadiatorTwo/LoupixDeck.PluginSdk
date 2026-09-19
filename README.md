@@ -8,6 +8,21 @@ dynamically loaded integration plugins — no application logic. Integrations
 and third-party plugins) are built against this SDK and shipped independently
 of the core.
 
+## Installation
+
+```bash
+dotnet add package LoupixDeck.PluginSdk
+```
+
+The host supplies the SDK assembly when it loads a plugin, so a plugin must not
+ship its own copy. Exclude the runtime asset in the plugin's `.csproj`:
+
+```xml
+<PackageReference Include="LoupixDeck.PluginSdk" Version="1.24.0">
+  <ExcludeAssets>runtime</ExcludeAssets>
+</PackageReference>
+```
+
 ## Documentation
 
 SDK documentation is available in the [Wiki](https://github.com/RadiatorTwo/LoupixDeck.PluginSdk/wiki).
@@ -33,6 +48,10 @@ SDK documentation is available in the [Wiki](https://github.com/RadiatorTwo/Loup
 
 The SDK uses SemVer. A plugin declares the SDK version it was built against;
 the host loads a plugin only when the **major** version matches.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
 
 ## Local development
 
