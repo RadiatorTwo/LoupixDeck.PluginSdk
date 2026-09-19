@@ -26,6 +26,8 @@ name: Plugin Store Release
 #   jobs:
 #     release:
 #       uses: RadiatorTwo/LoupixDeck.PluginSdk/.github/workflows/plugin-release.yml@master
+#       with:
+#         build-sdk: false      # the plugin references an SDK version published on nuget.org
 #
 # A manual run (workflow_dispatch) only builds the files as an artifact.
 
@@ -42,6 +44,13 @@ on:
         required: false
         type: string
         default: '10.0.x'
+      build-sdk:
+        description: >-
+          Build LoupixDeck.PluginSdk from source and serve it from a local folder feed.
+          Set to false once the plugin references a version published on nuget.org.
+        required: false
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -58,7 +67,10 @@ jobs:
         with:
           path: src/${{ github.event.repository.name }}
 
+      # Only for plugins pinned to an SDK version that predates the nuget.org listing; those
+      # versions exist nowhere but this repository's build output.
       - name: Checkout Plugin SDK
+        if: inputs.build-sdk
         uses: actions/checkout@v5
         with:
           repository: RadiatorTwo/LoupixDeck.PluginSdk
@@ -70,12 +82,14 @@ jobs:
           dotnet-version: ${{ inputs.dotnet-version }}
 
       - name: Build Plugin SDK package
+        if: inputs.build-sdk
         run: dotnet build src/LoupixDeck.PluginSdk -c Release
 
       # Plugin nuget.config files reference the SDK feed either as ..\LoupixDeck.PluginSdk\nupkg or
       # as ..\LoupixDeck\LoupixDeck.PluginSdk\nupkg. A missing local source is a hard error, so the
       # feed is mirrored to the nested path too.
       - name: Mirror SDK feed for nested-path plugins
+        if: inputs.build-sdk
         run: |
           mkdir -p src/LoupixDeck/LoupixDeck.PluginSdk
           cp -r src/LoupixDeck.PluginSdk/nupkg src/LoupixDeck/LoupixDeck.PluginSdk/nupkg
