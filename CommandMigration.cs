@@ -18,9 +18,18 @@ namespace LoupixDeck.PluginSdk;
 public sealed class CommandMigration
 {
     /// <summary>
+    /// Stable id, unique within the plugin. The host records <c>"{pluginId}:{Id}"</c> in the
+    /// device configuration once the rule has run and never runs it again — so a user who
+    /// deliberately rebuilds the old binding by hand keeps it. Never reuse an id for a
+    /// different rule; a new replacement needs a new id.
+    /// </summary>
+    public required string Id { get; init; }
+
+    /// <summary>
     /// The old binding, as one command name per gesture — no parameters, just the name. Every
-    /// gesture listed must match for the dial to be rewritten; gestures left out must be empty
-    /// on the dial. A dial that matches only partly is left alone.
+    /// gesture listed must carry exactly that command, as a single command rather than as part
+    /// of a chain, and their shared parameter values must agree. A dial that matches only
+    /// partly, or whose gestures point at different targets, is left alone.
     /// </summary>
     public required IReadOnlyDictionary<RotaryAction, string> From { get; init; }
 
