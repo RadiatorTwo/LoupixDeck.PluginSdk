@@ -58,6 +58,20 @@ public abstract class LoupixPlugin
         Array.Empty<DialPresetDescriptor>();
 
     /// <summary>
+    /// Returns the binding rewrites this plugin wants applied to dials the user has already
+    /// configured — see <see cref="CommandMigration"/>. Read once per device after the command
+    /// registry is built, and applied only to dials that match a rule exactly. Defaults to none.
+    /// </summary>
+    /// <remarks>
+    /// The rules are the plugin's own history, so they can stay in place across releases: once a
+    /// dial has been rewritten it no longer matches, and a user who never had the old binding is
+    /// unaffected. A rule whose <see cref="CommandMigration.To"/> is not registered is skipped,
+    /// so an incomplete install can never blank a dial.
+    /// </remarks>
+    public virtual IEnumerable<CommandMigration> GetCommandMigrations() =>
+        Array.Empty<CommandMigration>();
+
+    /// <summary>
     /// Returns the side-strip providers this plugin contributes (renderers a user can
     /// bind to a Razer side display strip in plugin-override mode). The host collects
     /// these after <see cref="Initialize"/>, alongside <see cref="GetCommands"/>.
