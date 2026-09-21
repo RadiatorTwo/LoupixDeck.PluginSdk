@@ -36,6 +36,15 @@ public sealed class SideStripRotary
 
     /// <summary>Command run on knob press (may be empty).</summary>
     public string PressCommand { get; init; } = string.Empty;
+
+    /// <summary>
+    /// The live value of the <see cref="IAdjustmentCommand"/> bound to this knob, or null when
+    /// it is bound to something else. Pull it while rendering rather than reading it once: the
+    /// <see cref="SideStripContext.Rotaries"/> list is a snapshot taken when the session was
+    /// created, and the value behind this accessor keeps changing after that — including when
+    /// something outside LoupixDeck moves it. Never null itself, so it is safe to call.
+    /// </summary>
+    public Func<AdjustmentValue?> GetValue { get; init; } = static () => null;
 }
 
 /// <summary>
