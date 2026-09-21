@@ -7,12 +7,14 @@ namespace LoupixDeck.PluginSdk;
 /// <see cref="IPluginCommand.SupportedTargets"/> to
 /// <see cref="ButtonTargets.RotaryEncoder"/>.
 ///
-/// Host-side dispatch for this interface is added alongside the first plugin
-/// that needs it; until then plugins should expose three discrete commands
-/// (e.g. <c>Foo.Up</c>, <c>Foo.Down</c>, <c>Foo.Reset</c>) bound to the
-/// rotary's left/right/press slots, and use <see cref="IPluginCommand.Execute"/>
-/// branching on <see cref="CommandContext.Target"/> to route them. Implementing
-/// <see cref="IAdjustmentCommand"/> in addition is forward-compatible.
+/// The host dispatches this interface from the rotary encoders: a turn runs
+/// <see cref="ApplyAdjustment"/> with the encoder's tick delta, a knob press runs
+/// <see cref="ApplyReset"/>. Binding the command to a single turn slot is enough —
+/// an empty opposite turn slot and an empty press slot borrow it. Any other target
+/// (touch button, simple button, macro, CLI) still calls
+/// <see cref="IPluginCommand.Execute"/>, so implement that as the non-dial fallback.
+/// On devices with side strips the segmented strip shows
+/// <see cref="GetValueText"/> as the dial indicator.
 /// </summary>
 public interface IAdjustmentCommand : IPluginCommand
 {
