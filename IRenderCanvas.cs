@@ -141,6 +141,47 @@ public interface IRenderCanvas
     /// </summary>
     void DrawImage(byte[] imageBytes, int x, int y, int width, int height, byte opacity, PluginColor tint = default);
 
+    /// <summary>
+    /// Copies a block of raw pixels 1:1 onto the canvas, its top-left at
+    /// (<paramref name="x"/>,<paramref name="y"/>). <paramref name="pixels"/> is row-major,
+    /// <paramref name="width"/>×<paramref name="height"/>, one <c>0xAARRGGBB</c> value per pixel
+    /// (straight, not premultiplied alpha). Pixels are composited over what is already there, so a
+    /// fully transparent pixel leaves the canvas unchanged. No scaling, no filtering, no decode and
+    /// no cache: the fast path for a plugin that rasterizes its own framebuffer every frame
+    /// (pixel fonts, sparklines), where <see cref="DrawImage(byte[],int,int,int,int)"/> would
+    /// encode, decode and evict other plugins' cached images. The current transform applies.
+    /// <para>Added in SDK 1.26.0. On an older host the member does not exist, so guard the call
+    /// with <see cref="SdkInfo.Version"/> and keep it in a separate, non-inlined method.</para>
+    /// </summary>
+    /// <exception cref="ArgumentException"><paramref name="pixels"/> holds fewer than
+    /// <paramref name="width"/>×<paramref name="height"/> values.</exception>
+    void DrawPixels(ReadOnlySpan<uint> pixels, int width, int height, int x = 0, int y = 0)
+    {
+        // Fallback for implementations predating this member: one rectangle per horizontal run of
+        // equal color. Exact on whole-pixel coordinates, only slower than a native blit.
+        if (width <= 0 || height <= 0)
+            return;
+        if (pixels.Length < width * height)
+            throw new ArgumentException("Fewer pixels than width × height.", nameof(pixels));
+
+        for (int row = 0; row < height; row++)
+        {
+            ReadOnlySpan<uint> line = pixels.Slice(row * width, width);
+            int column = 0;
+            while (column < width)
+            {
+                uint argb = line[column];
+                int start = column;
+                while (column < width && line[column] == argb)
+                    column++;
+
+                if ((argb >> 24) != 0)
+                    FillRectangle(x + start, y + row, column - start, 1,
+                        new PluginColor((byte)(argb >> 16), (byte)(argb >> 8), (byte)argb, (byte)(argb >> 24)));
+            }
+        }
+    }
+
     // ── Transform ───────────────────────────────────────────────────────────
     /// <summary>Saves the current transform so a later <see cref="PopTransform"/> restores it.</summary>
     void PushTransform();
