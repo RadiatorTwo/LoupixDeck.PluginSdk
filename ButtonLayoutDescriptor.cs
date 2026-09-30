@@ -107,8 +107,8 @@ public sealed class ButtonLayerDescriptor
 }
 
 /// <summary>
-/// Describes the layers the host creates when a command is put on a touch button, from the button editor
-/// or from the actions panel alike. A command that sets no layout keeps the host's default look.
+/// Describes the layers the host creates when a command is put on a touch button — from the actions panel
+/// and, for a command that declares one, from the button editor. A command that sets no layout is unchanged.
 /// </summary>
 /// <remarks>
 /// Additive since SDK 1.27.0 — a command that declares no layout behaves exactly as before. The layers
