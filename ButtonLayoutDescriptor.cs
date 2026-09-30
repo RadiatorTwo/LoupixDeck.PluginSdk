@@ -30,11 +30,17 @@ public enum ButtonLayoutMode
 /// <summary>The kind of a <see cref="ButtonLayerDescriptor"/>.</summary>
 public enum ButtonLayerKind
 {
-    /// <summary>An icon drawn from <see cref="ButtonLayerDescriptor.Glyph"/>.</summary>
+    /// <summary>An icon: a Material Design Icons glyph from <see cref="ButtonLayerDescriptor.Glyph"/>,
+    /// or — when <see cref="ButtonLayerDescriptor.ImageData"/> is set — an icon drawn from that SVG or
+    /// bitmap. Either way it is a symbol layer the user can tint like any other icon.</summary>
     Symbol = 0,
 
     /// <summary>A text caption drawn from <see cref="ButtonLayerDescriptor.Text"/>.</summary>
-    Text = 1
+    Text = 1,
+
+    /// <summary>A picture drawn from <see cref="ButtonLayerDescriptor.ImageData"/>, shown in its own
+    /// colours like an image the user added. Without image data the layer is left out.</summary>
+    Image = 2
 }
 
 /// <summary>
@@ -45,7 +51,7 @@ public enum ButtonLayerKind
 /// <remarks>Additive since SDK 1.27.0.</remarks>
 public sealed class ButtonLayerDescriptor
 {
-    /// <summary>Whether this layer is an icon or a text.</summary>
+    /// <summary>Whether this layer is an icon, a text or a picture.</summary>
     public ButtonLayerKind Kind { get; init; } = ButtonLayerKind.Symbol;
 
     /// <summary>Layer name shown in the editor's layer list. Null uses the command's display name.</summary>
@@ -56,13 +62,32 @@ public sealed class ButtonLayerDescriptor
     /// layer out.</summary>
     public string? Glyph { get; init; }
 
+    /// <summary>
+    /// Symbol and image layers: the file content of an SVG or a bitmap (PNG, JPEG, WebP, GIF), for an
+    /// icon that is not part of the Material Design Icons catalog. The host recognises the format from
+    /// the bytes and stores the picture in its asset store when the command is assigned, so the
+    /// button keeps working without the plugin. On a symbol layer it takes precedence over
+    /// <see cref="Glyph"/>. Keep it small — an icon, not a photo: the bytes stay in memory with the
+    /// descriptor for as long as the plugin is loaded. Data the host cannot decode leaves the layer out.
+    /// </summary>
+    public byte[]? ImageData { get; init; }
+
+    /// <summary>
+    /// Symbol layers drawn from <see cref="ImageData"/>: keep the picture's own colours instead of
+    /// tinting it. Null lets the host decide — a single-colour picture is tinted like a glyph, a
+    /// multi-colour one keeps its colours. Ignored for glyphs and for image layers, which always
+    /// keep their colours.
+    /// </summary>
+    public bool? KeepOriginalColors { get; init; }
+
     /// <summary>Text layers: the caption. Null uses the command's display name.</summary>
     public string? Text { get; init; }
 
     /// <summary>Text layers: font size in pixels on a 90 px key.</summary>
     public int TextSize { get; init; } = 14;
 
-    /// <summary>Symbol layers: the fraction of the key's short edge the icon fills (0.1 – 1.0).</summary>
+    /// <summary>Symbol and image layers: the fraction of the key's short edge the picture fills
+    /// (0.1 – 1.0), keeping its aspect ratio.</summary>
     public double IconScale { get; init; } = 0.5;
 
     /// <summary>Horizontal offset from the key centre in pixels on a 90 px key; negative is left.</summary>
