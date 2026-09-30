@@ -64,6 +64,15 @@ public sealed class CommandDescriptor
     public IReadOnlyList<ButtonStateDescriptor> States { get; init; } = [];
 
     /// <summary>
+    /// Which layers the host creates when the command is put on a touch button — from the button
+    /// editor and from the actions panel. Null (the default) keeps the host's standard look: the icon
+    /// with the display name as a caption. A command that renders its whole button itself, such as an
+    /// <see cref="IDisplayImageCommand"/>, sets <see cref="ButtonLayoutMode.None"/>. Additive since
+    /// SDK 1.27.0 — plugins built against an earlier SDK simply leave it null.
+    /// </summary>
+    public ButtonLayoutDescriptor? ButtonLayout { get; init; }
+
+    /// <summary>
     /// When true the command is not listed as a plain leaf in the command
     /// selection menu — it is instead surfaced through a dynamic submenu the
     /// plugin builds via <see cref="IMenuContributor"/> (e.g. one entry per OBS
