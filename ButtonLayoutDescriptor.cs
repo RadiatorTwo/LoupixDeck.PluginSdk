@@ -11,14 +11,15 @@ public enum ButtonLayoutMode
     /// <see cref="IDisplayImageCommand"/>: the button carries the command and nothing else.</summary>
     None = 1,
 
-    /// <summary>Only the icon, centred on the key.</summary>
+    /// <summary>Only the icon, centred on the key. A command whose icon the host cannot resolve gets
+    /// the standard look instead, so the button is never left empty.</summary>
     IconOnly = 2,
 
     /// <summary>Only the display name as a caption, filling the key.</summary>
     CaptionOnly = 3,
 
-    /// <summary>Icon with the caption below it. Same as <see cref="Default"/> for a command that
-    /// declares an icon; unlike <see cref="Default"/> it never falls back to a bare caption.</summary>
+    /// <summary>Icon with the caption below it. Behaves like <see cref="Default"/>; it lets a plugin
+    /// state the choice explicitly, so a later change to the host default cannot alter it.</summary>
     IconAndCaption = 4,
 
     /// <summary>The layers listed in <see cref="ButtonLayoutDescriptor.Layers"/>, in that order
