@@ -13,7 +13,8 @@ name: Plugin Store Release
 # repository. The store reads the published version from that file, so a release only reaches users
 # once its entry is merged.
 #
-# <platform> follows plugin.json: "Windows" -> windows, "Linux" -> linux, "All" (or none) -> any.
+# <platform> follows plugin.json: "Windows" -> windows, "Linux" -> linux, "macOS" -> macos,
+# "All" (or none) -> any.
 #
 # Caller (.github/workflows/release.yml in the plugin repository):
 #
@@ -129,6 +130,7 @@ jobs:
           case "${platform,,}" in
             windows) suffix=windows ;;
             linux) suffix=linux ;;
+            macos) suffix=macos ;;
             all|"") suffix=any ;;
             *) echo "Unknown platform '$platform' in plugin.json." >&2; exit 1 ;;
           esac
@@ -230,8 +232,8 @@ jobs:
             cat store-entry.json
             echo '```'
             echo
-            echo "A plugin that ships a Windows and a Linux package publishes one per run; merge both into"
-            echo "the same \`packages\` array."
+            echo "A plugin that ships a package per platform (windows, linux, macos) publishes one per run;"
+            echo "merge them into the same \`packages\` array."
           } >> "$GITHUB_STEP_SUMMARY"
 
       # store-entry.json travels in the artifact, not in dist: only the three files in dist are attached
