@@ -14,4 +14,11 @@ namespace LoupixDeck.PluginSdk;
 /// Short display text for the value, e.g. <c>"75%"</c>, <c>"-12 dB"</c> or a mute glyph.
 /// <c>null</c> draws the bar without a caption.
 /// </param>
-public readonly record struct AdjustmentValue(double Normalized, string? Text);
+public readonly record struct AdjustmentValue(double Normalized, string? Text)
+{
+    /// <summary>
+    /// Optional secondary text, e.g. <c>"resets in 3h12"</c> next to <c>"67%"</c>. Drawn only by text
+    /// layers set to show the value's detail; dial indicators ignore it. Additive since SDK 1.29.0.
+    /// </summary>
+    public string? Detail { get; init; }
+}
