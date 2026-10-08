@@ -8,5 +8,5 @@ namespace LoupixDeck.PluginSdk;
 public static class SdkInfo
 {
     /// <summary>The current SDK contract version.</summary>
-    public static readonly Version Version = new(1, 28, 0);
+    public static readonly Version Version = new(1, 29, 0);
 }
