@@ -30,6 +30,7 @@ interfaces, and a few value types. Everything lives in the
 | Type | Page | Purpose |
 |---|---|---|
 | `IDisplayCommand` | [Commands](API-Commands#idisplaycommand) | A command that also renders dynamic text on a touch button. |
+| `IValueDisplayCommand` | [Commands](API-Commands#ivaluedisplaycommand) | A command that reports a value the touch button's own indicator and text layers draw. |
 | `IMenuContributor` | [Dynamic Menus](Advanced-Menus) | Contributes dynamically built submenu entries. |
 | `MenuNode` | [Dynamic Menus](Advanced-Menus#menunode) | Folder or leaf node in a dynamic submenu. |
 | `IFolderProvider` | [Folder Navigation](Advanced-Folders#ifolderprovider) | Supplies a folder view on the touch screen. |

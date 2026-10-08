@@ -40,7 +40,31 @@ public enum ButtonLayerKind
 
     /// <summary>A picture drawn from <see cref="ButtonLayerDescriptor.ImageData"/>, shown in its own
     /// colours like an image the user added. Without image data the layer is left out.</summary>
-    Image = 2
+    Image = 2,
+
+    /// <summary>
+    /// An arc showing the value of an <see cref="IValueDisplayCommand"/>: a track over the whole sweep
+    /// and a fill (<see cref="ButtonLayerDescriptor.Color"/>) up to the value. Sized by
+    /// <see cref="ButtonLayerDescriptor.IconScale"/> and styled by <see cref="ButtonLayerDescriptor.TrackColor"/>,
+    /// <see cref="ButtonLayerDescriptor.Thickness"/>, <see cref="ButtonLayerDescriptor.StartAngle"/> and
+    /// <see cref="ButtonLayerDescriptor.SweepAngle"/>. It draws nothing while the command reports no
+    /// value. Additive since SDK 1.29.0; an older host leaves the layer out.
+    /// </summary>
+    Indicator = 3
+}
+
+/// <summary>Where a text layer of a <see cref="ButtonLayoutDescriptor"/> takes its text from.</summary>
+/// <remarks>Additive since SDK 1.29.0.</remarks>
+public enum ButtonTextSource
+{
+    /// <summary>The layer's own <see cref="ButtonLayerDescriptor.Text"/>.</summary>
+    Text = 0,
+
+    /// <summary>The <see cref="AdjustmentValue.Text"/> the command reports, e.g. <c>"67%"</c>.</summary>
+    Value = 1,
+
+    /// <summary>The <see cref="AdjustmentValue.Detail"/> the command reports, e.g. <c>"resets in 3h12"</c>.</summary>
+    Detail = 2
 }
 
 /// <summary>
@@ -87,7 +111,8 @@ public sealed class ButtonLayerDescriptor
     public int TextSize { get; init; } = 14;
 
     /// <summary>Symbol and image layers: the fraction of the key's short edge the picture fills
-    /// (0.1 – 1.0), keeping its aspect ratio.</summary>
+    /// (0.1 – 1.0), keeping its aspect ratio. Indicator layers: the fraction of the short edge the
+    /// arc's square box fills.</summary>
     public double IconScale { get; init; } = 0.5;
 
     /// <summary>Horizontal offset from the key centre in pixels on a 90 px key; negative is left.</summary>
@@ -102,8 +127,34 @@ public sealed class ButtonLayerDescriptor
     /// <summary>Text layers: height of the text box on a 90 px key. 0 fills the key.</summary>
     public int BoxHeight { get; init; }
 
-    /// <summary>Colour as <c>#RRGGBB</c> or <c>#AARRGGBB</c>. Null keeps the host's default (white).</summary>
+    /// <summary>Colour as <c>#RRGGBB</c> or <c>#AARRGGBB</c>. Null keeps the host's default (white).
+    /// For an indicator layer this is the fill.</summary>
     public string? Color { get; init; }
+
+    /// <summary>
+    /// Text layers: where the text comes from. <see cref="ButtonTextSource.Value"/> and
+    /// <see cref="ButtonTextSource.Detail"/> show what an <see cref="IValueDisplayCommand"/> reports, so
+    /// the text keeps every styling option the user has for text. Additive since SDK 1.29.0; an older
+    /// host shows <see cref="Text"/> instead.
+    /// </summary>
+    public ButtonTextSource TextSource { get; init; } = ButtonTextSource.Text;
+
+    /// <summary>Indicator layers: colour of the unfilled track as <c>#RRGGBB</c> or <c>#AARRGGBB</c>.
+    /// Null keeps the host's default. Additive since SDK 1.29.0.</summary>
+    public string? TrackColor { get; init; }
+
+    /// <summary>Indicator layers: stroke width as a fraction of the arc's box (e.g. 0.08). Null keeps
+    /// the host's default. Additive since SDK 1.29.0.</summary>
+    public double? Thickness { get; init; }
+
+    /// <summary>Indicator layers: where the arc starts, in degrees clockwise from 3 o'clock (-90 is
+    /// 12 o'clock). Null keeps the host's default, 135, which leaves the gap at the bottom.
+    /// Additive since SDK 1.29.0.</summary>
+    public double? StartAngle { get; init; }
+
+    /// <summary>Indicator layers: how far the arc sweeps clockwise, in degrees (360 is a full ring).
+    /// Null keeps the host's default, 270. Additive since SDK 1.29.0.</summary>
+    public double? SweepAngle { get; init; }
 }
 
 /// <summary>
@@ -122,4 +173,11 @@ public sealed class ButtonLayoutDescriptor
 
     /// <summary>The layers for <see cref="ButtonLayoutMode.Custom"/>; ignored for every other mode.</summary>
     public IReadOnlyList<ButtonLayerDescriptor> Layers { get; init; } = [];
+
+    /// <summary>
+    /// Background colour the button gets with the layers, as <c>#RRGGBB</c>. It is the button's own
+    /// background setting, so the user changes it like any other. Null leaves the background as it
+    /// is. Applies to every mode. Additive since SDK 1.29.0.
+    /// </summary>
+    public string? BackgroundColor { get; init; }
 }
