@@ -50,4 +50,21 @@ public sealed class RotaryOverride
     public Func<Task>? OnLeft { get; init; }
     public Func<Task>? OnRight { get; init; }
     public Func<Task>? OnPress { get; init; }
+
+    /// <summary>
+    /// Optional label the host draws in this dial's side-strip segment while the folder is open,
+    /// the same way it draws a configured dial's label outside a folder. Only side-strip devices
+    /// show it. Additive since SDK 1.31.0; an older host ignores it.
+    /// </summary>
+    public string? Label { get; init; }
+
+    /// <summary>
+    /// Optional live value the host draws in this dial's side-strip segment as the standard dial
+    /// indicator (a bar with the value text, under <see cref="Label"/>), exactly like a dial bound to
+    /// an <see cref="IAdjustmentCommand"/>. The host pulls it on every strip repaint, outside its
+    /// render lock. The host repaints the strip after <see cref="OnLeft"/> / <see cref="OnRight"/> ran;
+    /// when the value moves for another reason, raise <see cref="IFolderProvider.EntriesChanged"/>.
+    /// Return <c>null</c> to show only the label. Additive since SDK 1.31.0.
+    /// </summary>
+    public Func<AdjustmentValue?>? GetValue { get; init; }
 }
