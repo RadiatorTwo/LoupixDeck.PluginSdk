@@ -34,8 +34,40 @@ permissions:
   id-token: write
 
 jobs:
+  # The plugin tool is NativeAOT: one package per runtime, each built on its own OS (AOT does not
+  # cross-compile between operating systems; macOS builds both architectures).
+  tool:
+    name: Pack plugin tool (${{ matrix.rid }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - { rid: win-x64, os: windows-latest }
+          - { rid: linux-x64, os: ubuntu-latest }
+          - { rid: osx-x64, os: macos-latest }
+          - { rid: osx-arm64, os: macos-latest }
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Pack
+        run: dotnet pack tool/LoupixDeck.PluginTool/LoupixDeck.PluginTool.csproj -c Release -r ${{ matrix.rid }} -o artifacts
+
+      - name: Upload the package
+        uses: actions/upload-artifact@v4
+        with:
+          name: tool-${{ matrix.rid }}
+          path: artifacts/*.nupkg
+
   publish:
     name: Pack and publish
+    needs: tool
     runs-on: ubuntu-latest
 
     steps:
@@ -87,7 +119,15 @@ jobs:
         run: |
           set -euo pipefail
           dotnet pack LoupixDeck.PluginSdk.csproj -c Release -o artifacts -p:GeneratePackageOnBuild=false
+          # Pointer package: names the runtime packages built by the tool job.
           dotnet pack tool/LoupixDeck.PluginTool/LoupixDeck.PluginTool.csproj -c Release -o artifacts
+
+      - name: Collect the plugin tool runtime packages
+        uses: actions/download-artifact@v4
+        with:
+          pattern: tool-*
+          path: artifacts
+          merge-multiple: true
 
       - name: Upload the package as a build artifact
         uses: actions/upload-artifact@v4

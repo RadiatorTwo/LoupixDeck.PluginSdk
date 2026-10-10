@@ -4,17 +4,19 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <!-- Both TFMs so the tool installs on machines with only one of the runtimes. The singular
-         TargetFramework inherited from LoupixDeck's Directory.Build.props is cleared (see the SDK
-         csproj). -->
-    <TargetFrameworks>net9.0;net10.0</TargetFrameworks>
-    <TargetFramework></TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>default</LangVersion>
     <RootNamespace>LoupixDeck.PluginTool</RootNamespace>
 
+    <!-- NativeAOT, one RID-specific tool package per platform plus a pointer package that
+         'dotnet tool install' resolves to the right one (.NET 10 SDK or later). AOT cannot
+         cross-compile between operating systems, so each RID is packed on its own OS. -->
     <PackAsTool>true</PackAsTool>
+    <PublishAot>true</PublishAot>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <ToolPackageRuntimeIdentifiers>win-x64;linux-x64;osx-x64;osx-arm64</ToolPackageRuntimeIdentifiers>
     <ToolCommandName>loupix</ToolCommandName>
     <PackageId>LoupixDeck.PluginTool</PackageId>
     <PackageOutputPath>$(MSBuildProjectDirectory)\..\..\nupkg</PackageOutputPath>
@@ -26,6 +28,12 @@
     <PackageTags>loupixdeck;plugin;sdk;template;dotnet-tool</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <!-- Ship only the native executable: no .dbg / .pdb / .dSYM next to it. -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
   </PropertyGroup>
 
   <ItemGroup>

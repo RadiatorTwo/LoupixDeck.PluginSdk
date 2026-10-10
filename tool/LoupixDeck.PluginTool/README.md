@@ -1,6 +1,7 @@
 # LoupixDeck.PluginTool
 
-Command line tool for LoupixDeck plugin development.
+Command line tool for LoupixDeck plugin development. A single native executable (NativeAOT) for
+win-x64, linux-x64, osx-x64 and osx-arm64; installing it needs the .NET 10 SDK or later.
 
 ```bash
 dotnet tool install -g LoupixDeck.PluginTool
