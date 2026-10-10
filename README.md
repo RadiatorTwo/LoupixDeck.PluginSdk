@@ -66,4 +66,4 @@ To refresh the package the core builds against:
 dotnet build LoupixDeck.PluginSdk.csproj -c Release
 ```
 
-Bump `<Version>` in the `.csproj` before building when the contract changes.
+Bump `<Version>` in `Version.props` (and `SdkInfo.Version`) before building when the contract changes.

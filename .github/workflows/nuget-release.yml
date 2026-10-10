@@ -2,8 +2,8 @@ name: NuGet Release
 
 # Publishes LoupixDeck.PluginSdk to nuget.org when a GitHub release is published.
 #
-# Tag convention: v<Version>, matching <Version> in LoupixDeck.PluginSdk.csproj (v1.24.0 for
-# 1.24.0). The tag is checked against the csproj before anything is pushed — a NuGet version is
+# Tag convention: v<Version>, matching <Version> in Version.props (v1.24.0 for
+# 1.24.0). The tag is checked against it before anything is pushed — a NuGet version is
 # immutable once it is on the feed, so a mistyped tag has to fail the run, not ship.
 #
 # A manual run (workflow_dispatch) packs the package and uploads it as a build artifact without
@@ -52,9 +52,9 @@ jobs:
         id: version
         run: |
           set -euo pipefail
-          version=$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' LoupixDeck.PluginSdk.csproj | head -1)
+          version=$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' Version.props | head -1)
           if [ -z "$version" ]; then
-            echo "No <Version> found in LoupixDeck.PluginSdk.csproj." >&2
+            echo "No <Version> found in Version.props." >&2
             exit 1
           fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
@@ -70,7 +70,7 @@ jobs:
           tagged="${RELEASE_TAG#v}"
           if [ "$tagged" != "$VERSION" ]; then
             echo "Release tag '$RELEASE_TAG' does not match <Version> '$VERSION'." >&2
-            echo "Tag a release as v$VERSION, or bump the csproj first." >&2
+            echo "Tag a release as v$VERSION, or bump Version.props first." >&2
             exit 1
           fi
 
