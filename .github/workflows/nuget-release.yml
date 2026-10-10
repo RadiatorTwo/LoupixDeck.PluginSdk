@@ -19,8 +19,8 @@ name: NuGet Release
 #   Repository        LoupixDeck.PluginSdk
 #   Workflow File     nuget-release.yml     (file name only, no path)
 #   Environment       (empty)
-#   Scopes            push new packages and new versions, glob LoupixDeck.*
-#                     (covers LoupixDeck.PluginSdk and LoupixDeck.PluginTool)
+#   Glob Patterns     (empty: covers every package of the owner, including the LoupixDeck.PluginTool
+#                     pointer and runtime packages; if set, use LoupixDeck.*)
 #
 # Requires the repository secret NUGET_USER: the nuget.org profile name, not the email address.
 
