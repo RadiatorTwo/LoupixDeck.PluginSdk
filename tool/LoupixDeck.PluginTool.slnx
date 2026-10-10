@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="LoupixDeck.PluginTool/LoupixDeck.PluginTool.csproj" />
+  <Project Path="LoupixDeck.PluginTool.Tests/LoupixDeck.PluginTool.Tests.csproj" />
+</Solution>

@@ -1,9 +1,10 @@
 name: NuGet Release
 
-# Publishes LoupixDeck.PluginSdk to nuget.org when a GitHub release is published.
+# Publishes LoupixDeck.PluginSdk and the loupix plugin tool (LoupixDeck.PluginTool) to nuget.org
+# when a GitHub release is published. Both share the version in Version.props.
 #
-# Tag convention: v<Version>, matching <Version> in LoupixDeck.PluginSdk.csproj (v1.24.0 for
-# 1.24.0). The tag is checked against the csproj before anything is pushed — a NuGet version is
+# Tag convention: v<Version>, matching <Version> in Version.props (v1.24.0 for
+# 1.24.0). The tag is checked against it before anything is pushed — a NuGet version is
 # immutable once it is on the feed, so a mistyped tag has to fail the run, not ship.
 #
 # A manual run (workflow_dispatch) packs the package and uploads it as a build artifact without
@@ -18,7 +19,8 @@ name: NuGet Release
 #   Repository        LoupixDeck.PluginSdk
 #   Workflow File     nuget-release.yml     (file name only, no path)
 #   Environment       (empty)
-#   Scopes            push new packages and new versions, glob LoupixDeck.PluginSdk
+#   Glob Patterns     (empty: covers every package of the owner, including the LoupixDeck.PluginTool
+#                     pointer and runtime packages; if set, use LoupixDeck.*)
 #
 # Requires the repository secret NUGET_USER: the nuget.org profile name, not the email address.
 
@@ -32,8 +34,40 @@ permissions:
   id-token: write
 
 jobs:
+  # The plugin tool is NativeAOT: one package per runtime, each built on its own OS (AOT does not
+  # cross-compile between operating systems; macOS builds both architectures).
+  tool:
+    name: Pack plugin tool (${{ matrix.rid }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - { rid: win-x64, os: windows-latest }
+          - { rid: linux-x64, os: ubuntu-latest }
+          - { rid: osx-x64, os: macos-latest }
+          - { rid: osx-arm64, os: macos-latest }
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Pack
+        run: dotnet pack tool/LoupixDeck.PluginTool/LoupixDeck.PluginTool.csproj -c Release -r ${{ matrix.rid }} -o artifacts
+
+      - name: Upload the package
+        uses: actions/upload-artifact@v4
+        with:
+          name: tool-${{ matrix.rid }}
+          path: artifacts/*.nupkg
+
   publish:
     name: Pack and publish
+    needs: tool
     runs-on: ubuntu-latest
 
     steps:
@@ -52,9 +86,9 @@ jobs:
         id: version
         run: |
           set -euo pipefail
-          version=$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' LoupixDeck.PluginSdk.csproj | head -1)
+          version=$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' Version.props | head -1)
           if [ -z "$version" ]; then
-            echo "No <Version> found in LoupixDeck.PluginSdk.csproj." >&2
+            echo "No <Version> found in Version.props." >&2
             exit 1
           fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
@@ -70,16 +104,30 @@ jobs:
           tagged="${RELEASE_TAG#v}"
           if [ "$tagged" != "$VERSION" ]; then
             echo "Release tag '$RELEASE_TAG' does not match <Version> '$VERSION'." >&2
-            echo "Tag a release as v$VERSION, or bump the csproj first." >&2
+            echo "Tag a release as v$VERSION, or bump Version.props first." >&2
             exit 1
           fi
+
+      - name: Test the plugin tool
+        run: dotnet test tool/LoupixDeck.PluginTool.slnx -c Release
 
       - name: Pack
         # GeneratePackageOnBuild is on for the local dev feed, and with it set, pack no longer
         # builds the project — on a clean checkout that fails with NU5026, the assembly to be
         # packed not being on disk. Turning it off for this one invocation makes pack build
         # first, as it normally would.
-        run: dotnet pack LoupixDeck.PluginSdk.csproj -c Release -o artifacts -p:GeneratePackageOnBuild=false
+        run: |
+          set -euo pipefail
+          dotnet pack LoupixDeck.PluginSdk.csproj -c Release -o artifacts -p:GeneratePackageOnBuild=false
+          # Pointer package: names the runtime packages built by the tool job.
+          dotnet pack tool/LoupixDeck.PluginTool/LoupixDeck.PluginTool.csproj -c Release -o artifacts
+
+      - name: Collect the plugin tool runtime packages
+        uses: actions/download-artifact@v4
+        with:
+          pattern: tool-*
+          path: artifacts
+          merge-multiple: true
 
       - name: Upload the package as a build artifact
         uses: actions/upload-artifact@v4

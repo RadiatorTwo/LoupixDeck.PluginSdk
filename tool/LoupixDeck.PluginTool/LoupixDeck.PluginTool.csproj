@@ -1,0 +1,50 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\..\Version.props" />
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>default</LangVersion>
+    <RootNamespace>LoupixDeck.PluginTool</RootNamespace>
+
+    <!-- NativeAOT, one RID-specific tool package per platform plus a pointer package that
+         'dotnet tool install' resolves to the right one (.NET 10 SDK or later). AOT cannot
+         cross-compile between operating systems, so each RID is packed on its own OS. -->
+    <PackAsTool>true</PackAsTool>
+    <PublishAot>true</PublishAot>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <ToolPackageRuntimeIdentifiers>win-x64;linux-x64;osx-x64;osx-arm64</ToolPackageRuntimeIdentifiers>
+    <ToolCommandName>loupix</ToolCommandName>
+    <PackageId>LoupixDeck.PluginTool</PackageId>
+    <PackageOutputPath>$(MSBuildProjectDirectory)\..\..\nupkg</PackageOutputPath>
+    <Authors>RadiatorTwo</Authors>
+    <Description>Command line tool for LoupixDeck plugin development: scaffolds a plugin against the latest LoupixDeck.PluginSdk, packs it in the Plugin Store format and installs it locally.</Description>
+    <PackageProjectUrl>https://github.com/RadiatorTwo/LoupixDeck</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/RadiatorTwo/LoupixDeck.PluginSdk</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>loupixdeck;plugin;sdk;template;dotnet-tool</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <!-- Ship only the native executable: no .dbg / .pdb / .dSYM next to it. -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <!-- macOS still writes a .dSYM bundle; this keeps it out of the publish folder (and package). -->
+    <CopyOutputSymbolsToPublishDirectory>false</CopyOutputSymbolsToPublishDirectory>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Offline fallback for "latest SDK version": the SDK version this tool was released with. -->
+    <AssemblyMetadata Include="SdkVersion" Value="$(Version)" />
+    <InternalsVisibleTo Include="LoupixDeck.PluginTool.Tests" />
+    <!-- WithCulture=false: "Plugin.cs.tmpl" would otherwise be read as a Czech (cs) satellite resource. -->
+    <EmbeddedResource Include="Templates\**" LogicalName="Templates/%(RecursiveDir)%(Filename)%(Extension)" WithCulture="false" />
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+</Project>
