@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\..\Version.props" />
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <!-- Both TFMs so the tool installs on machines with only one of the runtimes. The singular
+         TargetFramework inherited from LoupixDeck's Directory.Build.props is cleared (see the SDK
+         csproj). -->
+    <TargetFrameworks>net9.0;net10.0</TargetFrameworks>
+    <TargetFramework></TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>default</LangVersion>
+    <RootNamespace>LoupixDeck.PluginTool</RootNamespace>
+
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>loupix</ToolCommandName>
+    <PackageId>LoupixDeck.PluginTool</PackageId>
+    <PackageOutputPath>$(MSBuildProjectDirectory)\..\..\nupkg</PackageOutputPath>
+    <Authors>RadiatorTwo</Authors>
+    <Description>Command line tool for LoupixDeck plugin development: scaffolds a plugin against the latest LoupixDeck.PluginSdk, packs it in the Plugin Store format and installs it locally.</Description>
+    <PackageProjectUrl>https://github.com/RadiatorTwo/LoupixDeck</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/RadiatorTwo/LoupixDeck.PluginSdk</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>loupixdeck;plugin;sdk;template;dotnet-tool</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Offline fallback for "latest SDK version": the SDK version this tool was released with. -->
+    <AssemblyMetadata Include="SdkVersion" Value="$(Version)" />
+    <InternalsVisibleTo Include="LoupixDeck.PluginTool.Tests" />
+    <!-- WithCulture=false: "Plugin.cs.tmpl" would otherwise be read as a Czech (cs) satellite resource. -->
+    <EmbeddedResource Include="Templates\**" LogicalName="Templates/%(RecursiveDir)%(Filename)%(Extension)" WithCulture="false" />
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+</Project>

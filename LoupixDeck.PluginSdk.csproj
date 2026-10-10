@@ -14,6 +14,8 @@
     <Nullable>enable</Nullable>
     <LangVersion>default</LangVersion>
     <DebugType>embedded</DebugType>
+    <!-- The plugin tool lives in tool/ with its own projects; keep its sources out of the SDK. -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);tool/**</DefaultItemExcludes>
 
     <!-- NuGet packaging. The LoupixDeck core consumes this SDK as a NuGet
          package; building the project drops a .nupkg into ./nupkg so a local

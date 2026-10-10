@@ -1,0 +1,22 @@
+using LoupixDeck.PluginSdk;
+
+namespace {{Namespace}};
+
+public sealed class {{ClassName}} : LoupixPlugin
+{
+    public override PluginMetadata Metadata { get; } = new()
+    {
+        Id = "{{Id}}",
+        Name = "{{DisplayName}}",
+        Version = new Version(1, 0, 0),
+        SdkVersion = new Version({{SdkMajor}}, {{SdkMinor}}, 0),
+        Author = "{{Author}}",
+        Description = ""
+    };
+
+    public override void Initialize(IPluginHost host)
+    {
+    }
+
+    public override IEnumerable<IPluginCommand> GetCommands() => [];
+}
