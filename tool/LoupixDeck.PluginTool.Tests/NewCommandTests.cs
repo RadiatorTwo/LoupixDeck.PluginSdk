@@ -32,7 +32,7 @@ public sealed class NewCommandTests
         Assert.Equal("Linux", root.GetProperty("platform").GetString());
         Assert.Equal("Jane", root.GetProperty("author").GetString());
         Assert.Contains("""Include="LoupixDeck.PluginSdk" Version="1.31.0">""", files["LoupixDeck.Plugin.Demo.csproj"]);
-        Assert.Contains("SdkVersion = new Version(1, 31, 0)", files["DemoPlugin.cs"]);
+        Assert.Contains("SdkVersion = SdkInfo.Version", files["DemoPlugin.cs"]);
     }
 
     [Fact]
