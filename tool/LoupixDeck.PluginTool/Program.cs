@@ -11,6 +11,9 @@ const string help = $"""
           Validate plugin.json, build, and write the Plugin Store files to dist/
           (<id>-<version>-<platform>.zip, plugin.json, SHA256SUMS).
 
+      {InstallCommand.Usage}
+          Pack and install into the LoupixDeck plugins folder (--debug: a Debug build's folder).
+
       loupix --version
     """;
 
@@ -20,6 +23,7 @@ try
     {
         ["new", .. string[] rest] => await NewCommand.RunAsync(rest),
         ["pack", .. string[] rest] => PackCommand.Run(rest),
+        ["install", .. string[] rest] => InstallCommand.Run(rest),
         ["--version"] => PrintVersion(),
         [] or ["--help"] or ["-h"] => PrintHelp(),
         _ => throw new ToolException($"Unknown command '{args[0]}'. Run 'loupix --help'.")
