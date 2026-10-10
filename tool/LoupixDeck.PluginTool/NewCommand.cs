@@ -70,6 +70,7 @@ internal static class NewCommand
         {
             [$"{name.ProjectName}.csproj"] = "Plugin.csproj.tmpl",
             [$"{name.ProjectName}.slnx"] = "Plugin.slnx.tmpl",
+            ["Directory.Build.props"] = "Directory.Build.props.tmpl",
             [$"{name.ClassName}.cs"] = "Plugin.cs.tmpl",
             ["plugin.json"] = "plugin.json.tmpl",
             [".gitignore"] = "gitignore.tmpl",

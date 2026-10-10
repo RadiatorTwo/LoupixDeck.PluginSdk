@@ -44,6 +44,7 @@ public sealed class NewCommandTests
         // Assert
         Assert.DoesNotContain("nuget.config", files.Keys);
         Assert.Contains(".github/workflows/release.yml", files.Keys);
+        Assert.Contains("Directory.Build.props", files.Keys);
     }
 
     [Fact]
