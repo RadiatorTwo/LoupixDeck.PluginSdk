@@ -79,4 +79,18 @@ public interface IExclusiveModeProvider
     /// by every other mode. Defaults to slot 0.
     /// </summary>
     int SingleTileSlot => 0;
+
+    /// <summary>
+    /// Draws the Loupedeck CT's round wheel screen while this provider is active. The canvas is
+    /// square (<see cref="IRenderCanvas.Width"/> equals <see cref="IRenderCanvas.Height"/>), only
+    /// its inscribed circle is visible, and it is cleared to black before the call. Return
+    /// <c>false</c> (the default) to leave the wheel to its normal page content. The host repaints
+    /// the wheel when the provider enters and on <see cref="EntriesChanged"/>; it is never called
+    /// on a device without a wheel screen.
+    /// </summary>
+    /// <remarks>
+    /// Added in SDK 1.32.0. An older host ignores the member, so the wheel keeps its page content
+    /// there; check <see cref="SdkInfo.Version"/> when the provider depends on it.
+    /// </remarks>
+    bool RenderWheel(IRenderCanvas canvas) => false;
 }
