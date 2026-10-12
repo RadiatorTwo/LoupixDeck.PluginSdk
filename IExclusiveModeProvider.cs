@@ -39,12 +39,14 @@ public interface IExclusiveModeProvider
     void OnTouchPressed(int slotIndex);
 
     /// <summary>A rotary encoder was pressed. Only raised while <see cref="Scope"/>
-    /// contains <see cref="ExclusiveControlScope.RotaryPress"/>.</summary>
+    /// contains <see cref="ExclusiveControlScope.RotaryPress"/>. The Loupedeck CT wheel
+    /// reports index 6 and follows the rule in <see cref="WheelFollowsRotaryScope"/>.</summary>
     void OnRotaryPressed(int index);
 
     /// <summary>A rotary encoder turned. <paramref name="delta"/> is positive for
     /// clockwise / right and negative for counter-clockwise / left. Only raised while
-    /// <see cref="Scope"/> contains <see cref="ExclusiveControlScope.RotaryTurn"/>.</summary>
+    /// <see cref="Scope"/> contains <see cref="ExclusiveControlScope.RotaryTurn"/>. The Loupedeck CT
+    /// wheel reports index 6 and follows the rule in <see cref="WheelFollowsRotaryScope"/>.</summary>
     void OnRotated(int index, int delta);
 
     /// <summary>Raised when the touch entries (or their displayed data) changed
@@ -79,6 +81,21 @@ public interface IExclusiveModeProvider
     /// by every other mode. Defaults to slot 0.
     /// </summary>
     int SingleTileSlot => 0;
+
+    /// <summary>
+    /// Whether the Loupedeck CT wheel counts as a rotary for <see cref="ExclusiveControlScope.RotaryTurn"/>
+    /// and <see cref="ExclusiveControlScope.RotaryPress"/>. <c>true</c> (the default) keeps the behaviour
+    /// from before the wheel had its own flag: the rotary flags take the wheel along with the side dials.
+    /// Return <c>false</c> to make the rotary flags cover the side dials only; the wheel is then taken
+    /// only through <see cref="ExclusiveControlScope.Wheel"/>. A scope with
+    /// <see cref="ExclusiveControlScope.Wheel"/> owns the wheel either way.
+    /// </summary>
+    /// <remarks>
+    /// Added in SDK 1.32.0. Read on every input like <see cref="Scope"/>. An older host ignores the
+    /// member and always treats the wheel as a rotary; check <see cref="SdkInfo.Version"/> when the
+    /// provider depends on it.
+    /// </remarks>
+    bool WheelFollowsRotaryScope => true;
 
     /// <summary>
     /// Draws the Loupedeck CT's round wheel screen while this provider is active. The canvas is
