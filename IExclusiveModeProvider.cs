@@ -110,4 +110,26 @@ public interface IExclusiveModeProvider
     /// there; check <see cref="SdkInfo.Version"/> when the provider depends on it.
     /// </remarks>
     bool RenderWheel(IRenderCanvas canvas) => false;
+
+    /// <summary>
+    /// A touch frame on the Loupedeck CT's wheel screen while this provider owns the wheel's press
+    /// (<see cref="ExclusiveControlScope.RotaryPress"/> under the rule in <see cref="WheelFollowsRotaryScope"/>,
+    /// or <see cref="ExclusiveControlScope.Wheel"/>). Return <c>true</c> for any phase of a touch to claim
+    /// it: the host then raises no <see cref="OnRotaryPressed"/> and no <see cref="OnWheelSwiped"/> for it.
+    /// The default returns <c>false</c>, so a short tap still arrives as <see cref="OnRotaryPressed"/>.
+    /// </summary>
+    /// <remarks>
+    /// Added in SDK 1.32.0. Runs on the device input thread; keep it fast. An older host never calls it.
+    /// See <see cref="IWheelInputHandler"/> for the coordinate space and when input is withheld.
+    /// </remarks>
+    bool OnWheelTouch(WheelTouch touch) => false;
+
+    /// <summary>
+    /// A swipe across the Loupedeck CT's wheel screen in a touch this provider did not claim through
+    /// <see cref="OnWheelTouch"/>, while it owns the wheel's press. The host's own swipe actions
+    /// (workspace switch, wheel-mode menu) are always suppressed while it owns the wheel, so the
+    /// return value only says whether the swipe was used. The default returns <c>false</c>.
+    /// </summary>
+    /// <remarks>Added in SDK 1.32.0. An older host never calls it.</remarks>
+    bool OnWheelSwiped(WheelSwipeDirection direction) => false;
 }
