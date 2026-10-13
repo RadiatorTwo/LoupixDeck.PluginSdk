@@ -61,6 +61,14 @@ internal sealed partial record PluginManifest(string Id, string Version, string 
         if (suffix is null)
             problems.Add($"'platform' \"{platform}\" is not All, Windows, Linux or macOS.");
 
+        // Optional; plugin-release.yml and the host accept x64 and arm64 only.
+        if (root.TryGetProperty("architectures", out JsonElement architectures)
+            && ((architectures.ValueKind != JsonValueKind.Array)
+                || architectures.EnumerateArray().Any(a => a.ValueKind != JsonValueKind.String || a.GetString() is not ("x64" or "arm64"))))
+        {
+            problems.Add($"'architectures' {architectures.GetRawText()} may only list \"x64\" and \"arm64\".");
+        }
+
         if (problems.Count > 0)
             throw new ToolException("plugin.json is invalid:" + string.Concat(problems.Select(p => $"{Environment.NewLine}  - {p}")));
 
