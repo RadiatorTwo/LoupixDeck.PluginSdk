@@ -6,7 +6,7 @@ name: Plugin Store Release
 #
 #   <id>-<version>-<platform>.zip   plugin.json and the plugin files at the zip root
 #   plugin.json                     the manifest, so the store can read it without the zip
-#   SHA256SUMS                      sha256sum output for both files above
+#   SHA256SUMS                      sha256sum output for the files above
 #
 # It also prints the plugin's plugin-store.json entry to the job summary and puts it in the build
 # artifact as store-entry.json, ready to be pasted into a pull request against the LoupixDeck
@@ -14,7 +14,18 @@ name: Plugin Store Release
 # once its entry is merged.
 #
 # <platform> follows plugin.json: "Windows" -> windows, "Linux" -> linux, "macOS" -> macos,
-# "All" (or none) -> any.
+# "All" (or none) -> any. An optional "architectures" list in plugin.json (x64, arm64) is copied to
+# the package entry, so the store only offers the package on those CPU architectures.
+#
+# A plugin with native code per CPU architecture sets the runtimes input instead (e.g.
+# 'win-x64 win-arm64'). The plugin is then built once per runtime identifier and one package per
+# runtime is attached:
+#
+#   win-x64    <id>-<version>-windows.zip        platform windows, architectures [x64]
+#   win-arm64  <id>-<version>-windows-arm64.zip  platform windows-arm64
+#
+# (linux-* and osx-* likewise). The x64 build keeps the plain platform name, so LoupixDeck versions
+# that predate architectures go on installing it; newer ones take the arm64 package on ARM64.
 #
 # Caller (.github/workflows/release.yml in the plugin repository):
 #
@@ -29,6 +40,7 @@ name: Plugin Store Release
 #       uses: RadiatorTwo/LoupixDeck.PluginSdk/.github/workflows/plugin-release.yml@master
 #       with:
 #         build-sdk: false      # the plugin references an SDK version published on nuget.org
+#         runtimes: ''          # optional, e.g. 'win-x64 win-arm64' for per-architecture packages
 #
 # A manual run (workflow_dispatch) only builds the files as an artifact.
 
@@ -52,6 +64,14 @@ on:
         required: false
         type: boolean
         default: true
+      runtimes:
+        description: >-
+          Optional runtime identifiers, separated by spaces or commas (e.g. 'win-x64 win-arm64'). Each
+          one is built and packed on its own, for plugins with native code per CPU architecture. Empty
+          builds one package for the platform in plugin.json, as before.
+        required: false
+        type: string
+        default: ''
 
 permissions:
   contents: write
@@ -108,6 +128,7 @@ jobs:
           sdk=$(jq -r '.sdkVersion // empty' "$manifest")
           entry=$(jq -r '.entryAssembly // empty' "$manifest")
           platform=$(jq -r '.platform // "All"' "$manifest")
+          architectures=$(jq -c '.architectures // []' "$manifest")
 
           for field in id version sdk entry; do
             if [ -z "${!field}" ]; then
@@ -135,47 +156,119 @@ jobs:
             *) echo "Unknown platform '$platform' in plugin.json." >&2; exit 1 ;;
           esac
 
+          if ! jq -e 'type == "array" and all(.[]; . == "x64" or . == "arm64")' <<<"$architectures" > /dev/null; then
+            echo "plugin.json architectures $architectures may only list x64 and arm64." >&2
+            exit 1
+          fi
+
           {
             echo "id=$id"
             echo "version=$version"
             echo "sdk=$sdk"
             echo "entry=$entry"
             echo "platform=$suffix"
-            echo "package=$id-$version-$suffix.zip"
+            echo "architectures=$architectures"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Build plugin
+      # One line per package: "<runtime identifier or -> <package platform> <architectures JSON or ->".
+      # Without runtimes that is the single package for plugin.json's platform, built as before.
+      - name: Plan the packages
         env:
-          REPO_NAME: ${{ github.event.repository.name }}
-          PROJECT: ${{ inputs.project }}
+          RUNTIMES: ${{ inputs.runtimes }}
+          PLATFORM: ${{ steps.manifest.outputs.platform }}
+          ARCHITECTURES: ${{ steps.manifest.outputs.architectures }}
         run: |
           set -euo pipefail
-          project="${PROJECT:-$REPO_NAME.csproj}"
-          dotnet build "src/$REPO_NAME/$project" -c Release -o build /p:DebugSymbols=false /p:DebugType=none
+          : > packages.txt
+          if [ -z "${RUNTIMES//[ ,]/}" ]; then
+            if [ "$ARCHITECTURES" = "[]" ]; then
+              echo "- $PLATFORM -" >> packages.txt
+            else
+              echo "- $PLATFORM $ARCHITECTURES" >> packages.txt
+            fi
+          else
+            for rid in ${RUNTIMES//,/ }; do
+              case "$rid" in
+                win-*) os=windows ;;
+                linux-*) os=linux ;;
+                osx-*) os=macos ;;
+                *) echo "Runtime '$rid' is not a win-, linux- or osx- runtime identifier." >&2; exit 1 ;;
+              esac
+              arch="${rid#*-}"
+              if [ "$arch" != x64 ] && [ "$arch" != arm64 ]; then
+                echo "Runtime '$rid': only x64 and arm64 are supported." >&2
+                exit 1
+              fi
+              if [ "$PLATFORM" != any ] && [ "$PLATFORM" != "$os" ]; then
+                echo "Runtime '$rid' does not match the platform '$PLATFORM' in plugin.json." >&2
+                exit 1
+              fi
+              if ! jq -e --arg a "$arch" 'length == 0 or index($a) != null' <<<"$ARCHITECTURES" > /dev/null; then
+                echo "Runtime '$rid' is not in the plugin.json architectures $ARCHITECTURES." >&2
+                exit 1
+              fi
+              # x64 keeps the plain platform name: older LoupixDeck versions only install that one.
+              if [ "$arch" = x64 ]; then
+                echo "$rid $os [\"x64\"]" >> packages.txt
+              else
+                echo "$rid $os-$arch [\"$arch\"]" >> packages.txt
+              fi
+            done
+            dupes=$(cut -d' ' -f2 packages.txt | sort | uniq -d)
+            if [ -n "$dupes" ]; then
+              echo "Two runtimes produce the same package: $dupes" >&2
+              exit 1
+            fi
+          fi
+          cat packages.txt
 
       # Same selection the app release used when it still bundled plugins: everything the build
       # produced except symbols and runtimeconfig files. The SDK itself is never copied (the plugin
-      # references it with ExcludeAssets=runtime); the host provides it.
-      - name: Package
+      # references it with ExcludeAssets=runtime); the host provides it. A per-runtime build is not
+      # self-contained (the host brings the runtime), and its packed plugin.json names its
+      # architecture, so LoupixDeck refuses it on another one.
+      - name: Build and package
         env:
           REPO_NAME: ${{ github.event.repository.name }}
-          ENTRY: ${{ steps.manifest.outputs.entry }}
-          PACKAGE: ${{ steps.manifest.outputs.package }}
+          PROJECT: ${{ inputs.project }}
+          PLUGIN_ID: ${{ steps.manifest.outputs.id }}
+          PLUGIN_VERSION: ${{ steps.manifest.outputs.version }}
+          PLUGIN_ENTRY: ${{ steps.manifest.outputs.entry }}
         run: |
           set -euo pipefail
-          mkdir -p staging dist
-          find build -mindepth 1 -maxdepth 1 ! -name '*.pdb' ! -name '*.runtimeconfig.json' -exec cp -r {} staging/ \;
-          rm -f staging/LoupixDeck.PluginSdk.dll
-          cp "src/$REPO_NAME/plugin.json" staging/plugin.json
+          project="${PROJECT:-$REPO_NAME.csproj}"
+          mkdir -p dist
+          while read -r rid platform architectures; do
+            package="$PLUGIN_ID-$PLUGIN_VERSION-$platform.zip"
+            if [ "$rid" = - ]; then
+              build=build
+              staging=staging
+              dotnet build "src/$REPO_NAME/$project" -c Release -o "$build" /p:DebugSymbols=false /p:DebugType=none
+            else
+              build="build-$rid"
+              staging="staging-$rid"
+              dotnet build "src/$REPO_NAME/$project" -c Release -r "$rid" --self-contained false -o "$build" /p:DebugSymbols=false /p:DebugType=none
+            fi
 
-          if [ ! -f "staging/$ENTRY" ]; then
-            echo "Entry assembly '$ENTRY' is missing from the build output." >&2
-            exit 1
-          fi
+            mkdir -p "$staging"
+            find "$build" -mindepth 1 -maxdepth 1 ! -name '*.pdb' ! -name '*.runtimeconfig.json' -exec cp -r {} "$staging/" \;
+            rm -f "$staging/LoupixDeck.PluginSdk.dll"
+            if [ "$rid" = - ]; then
+              cp "src/$REPO_NAME/plugin.json" "$staging/plugin.json"
+            else
+              jq --argjson a "$architectures" '.architectures = $a' "src/$REPO_NAME/plugin.json" > "$staging/plugin.json"
+            fi
 
-          (cd staging && zip -r -X "../dist/$PACKAGE" .)
+            if [ ! -f "$staging/$PLUGIN_ENTRY" ]; then
+              echo "Entry assembly '$PLUGIN_ENTRY' is missing from the build output." >&2
+              exit 1
+            fi
+
+            (cd "$staging" && zip -r -X "../dist/$package" .)
+          done < packages.txt
+
           cp "src/$REPO_NAME/plugin.json" dist/plugin.json
-          (cd dist && sha256sum "$PACKAGE" plugin.json > SHA256SUMS)
+          (cd dist && sha256sum $(cut -d' ' -f2 ../packages.txt | sed "s/.*/$PLUGIN_ID-$PLUGIN_VERSION-&.zip/") plugin.json > SHA256SUMS)
           cat dist/SHA256SUMS
 
       # The Plugin Store installs from plugin-store.json in the LoupixDeck repository, which carries the
@@ -187,15 +280,29 @@ jobs:
           ID: ${{ steps.manifest.outputs.id }}
           VERSION: ${{ steps.manifest.outputs.version }}
           SDK: ${{ steps.manifest.outputs.sdk }}
-          PLATFORM: ${{ steps.manifest.outputs.platform }}
-          PACKAGE: ${{ steps.manifest.outputs.package }}
           RELEASE_TAG: ${{ github.event.release.tag_name }}
           PUBLISHED_AT: ${{ github.event.release.published_at }}
         run: |
           set -euo pipefail
           tag="${RELEASE_TAG:-v$VERSION}"
           published="${PUBLISHED_AT:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}"
-          sha=$(awk -v file="$PACKAGE" '$2 == file || $2 == "*"file { print $1 }' dist/SHA256SUMS)
+
+          # An architecture-specific platform (windows-arm64) already names its architecture.
+          packages='[]'
+          while read -r rid platform architectures; do
+            file="$ID-$VERSION-$platform.zip"
+            sha=$(awk -v file="$file" '$2 == file || $2 == "*"file { print $1 }' dist/SHA256SUMS)
+            packages=$(jq -c \
+              --arg platform "$platform" \
+              --arg architectures "$architectures" \
+              --arg file "$file" \
+              --arg url "https://github.com/$GITHUB_REPOSITORY/releases/download/$tag/$file" \
+              --arg sha "$sha" \
+              '. + [ { platform: $platform }
+                     + (if $architectures == "-" or ($platform | contains("-")) then {}
+                        else { architectures: ($architectures | fromjson) } end)
+                     + { fileName: $file, downloadUrl: $url, sha256: $sha } ]' <<<"$packages")
+          done < packages.txt
 
           jq -n \
             --arg version "$VERSION" \
@@ -203,17 +310,14 @@ jobs:
             --arg published "$published" \
             --arg sdk "$SDK" \
             --arg notes "https://github.com/$GITHUB_REPOSITORY/releases/tag/$tag" \
-            --arg platform "$PLATFORM" \
-            --arg file "$PACKAGE" \
-            --arg url "https://github.com/$GITHUB_REPOSITORY/releases/download/$tag/$PACKAGE" \
-            --arg sha "$sha" \
+            --argjson packages "$packages" \
             '{
                version: $version,
                tag: $tag,
                publishedAt: $published,
                sdkVersion: $sdk,
                releaseNotesUrl: $notes,
-               packages: [ { platform: $platform, fileName: $file, downloadUrl: $url, sha256: $sha } ]
+               packages: $packages
              }' > store-entry.json
 
           {
@@ -232,12 +336,12 @@ jobs:
             cat store-entry.json
             echo '```'
             echo
-            echo "A plugin that ships a package per platform (windows, linux, macos) publishes one per run;"
-            echo "merge them into the same \`packages\` array."
+            echo "A plugin that ships a package per OS (windows, linux, macos) without the runtimes input"
+            echo "publishes one per run; merge them into the same \`packages\` array."
           } >> "$GITHUB_STEP_SUMMARY"
 
-      # store-entry.json travels in the artifact, not in dist: only the three files in dist are attached
-      # to the release.
+      # store-entry.json travels in the artifact, not in dist: only the files in dist are attached to
+      # the release.
       - name: Upload build artifact
         uses: actions/upload-artifact@v7
         with:
