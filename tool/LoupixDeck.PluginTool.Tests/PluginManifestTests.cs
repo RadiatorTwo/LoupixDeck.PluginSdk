@@ -32,6 +32,37 @@ public sealed class PluginManifestTests
         Assert.Equal("any", manifest.PlatformSuffix);
     }
 
+    [Theory]
+    [InlineData("""[ "x64" ]""")]
+    [InlineData("""[ "x64", "arm64" ]""")]
+    [InlineData("[]")]
+    public void Parse_ValidArchitectures_IsAccepted(string architectures)
+    {
+        // Arrange
+        string json = $$"""{ "id": "demo", "version": "1.0.0", "sdkVersion": "1.31", "entryAssembly": "Demo.dll", "architectures": {{architectures}} }""";
+
+        // Act
+        PluginManifest manifest = PluginManifest.Parse(json);
+
+        // Assert
+        Assert.Equal("demo-1.0.0-any.zip", manifest.PackageFileName);
+    }
+
+    [Theory]
+    [InlineData("""[ "x86" ]""")]
+    [InlineData("\"x64\"")]
+    public void Parse_InvalidArchitectures_IsRejected(string architectures)
+    {
+        // Arrange
+        string json = $$"""{ "id": "demo", "version": "1.0.0", "sdkVersion": "1.31", "entryAssembly": "Demo.dll", "architectures": {{architectures}} }""";
+
+        // Act
+        ToolException ex = Assert.Throws<ToolException>(() => PluginManifest.Parse(json));
+
+        // Assert
+        Assert.Contains("'architectures'", ex.Message);
+    }
+
     [Fact]
     public void Parse_InvalidManifest_ReportsEveryProblem()
     {
