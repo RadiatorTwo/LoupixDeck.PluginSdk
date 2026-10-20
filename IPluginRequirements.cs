@@ -33,8 +33,8 @@ public sealed class PluginRequirement
 /// that is loaded but silent.
 ///
 /// The host calls <see cref="GetRequirements"/> after the plugin has loaded and again on demand
-/// (for example when the Plugins page or the Linux Doctor refreshes), always off the startup
-/// path. Implementations should be quick and must not throw; a failing call is treated as "no
+/// (for example when the Plugins page or the Linux Doctor refreshes, or when the plugin calls
+/// <see cref="IPluginHost.RequestRequirementsRefresh"/>), always off the startup path. Implementations should be quick and must not throw; a failing call is treated as "no
 /// requirements reported".
 ///
 /// Backward compatibility: this is an independent, optional interface. A plugin that does not
