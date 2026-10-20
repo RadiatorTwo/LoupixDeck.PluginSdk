@@ -45,6 +45,16 @@ public interface IPluginHost
     /// command name (used by display commands after data changes).</summary>
     void RequestButtonRefresh(string commandName);
 
+    /// <summary>
+    /// Asks the host to call <see cref="IPluginRequirements.GetRequirements"/> again, because
+    /// something the plugin reports there has changed while it runs (for example a service that
+    /// started refusing requests). The host evaluates off the calling thread and updates its
+    /// notices when the result differs. Safe to call from any thread; do not call it from inside
+    /// <see cref="IPluginRequirements.GetRequirements"/>. Added in SDK 1.34; on an older 1.x host
+    /// the call throws <see cref="MissingMethodException"/>.
+    /// </summary>
+    void RequestRequirementsRefresh();
+
     /// <summary>Executes a command string through the host's command pipeline,
     /// enabling command chaining across plugin boundaries.</summary>
     void ExecuteCommand(string command);
