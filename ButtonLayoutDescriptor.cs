@@ -104,7 +104,13 @@ public sealed class ButtonLayerDescriptor
     /// </summary>
     public bool? KeepOriginalColors { get; init; }
 
-    /// <summary>Text layers: the caption. Null uses the command's display name.</summary>
+    /// <summary>
+    /// Text layers: the caption. Null uses the command's display name. In a state layout
+    /// (<see cref="ButtonStateDescriptor.Layout"/>) a <c>{ParameterName}</c> placeholder is replaced
+    /// with the button's value for that parameter when the layers are created — e.g.
+    /// <c>"{SceneName}"</c> — and is plain text from then on; since SDK 1.34.0, an older host shows
+    /// the placeholder as written.
+    /// </summary>
     public string? Text { get; init; }
 
     /// <summary>Text layers: font size in pixels on a 90 px key.</summary>

@@ -138,4 +138,12 @@ public interface IPluginHost
     /// visible state changes only when the plugin calls this. Returns true if a button was updated.
     /// </summary>
     bool SetActiveButtonState(string commandName, string stateNameOrId);
+
+    /// <summary>
+    /// Asks the host to call <see cref="IButtonStateCommand.GetButtonState"/> for every button bound
+    /// to <paramref name="commandName"/> and to show the state each one reports. Call it when the
+    /// data behind the states changed; the host does not poll. Safe to call from any thread. Added
+    /// in SDK 1.34; on an older 1.x host the call throws <see cref="MissingMethodException"/>.
+    /// </summary>
+    void RefreshButtonStates(string commandName);
 }

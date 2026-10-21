@@ -29,8 +29,9 @@ public sealed class CommandContext
 
     /// <summary>
     /// Name of the button state currently being rendered, for a command that declares its states
-    /// through <see cref="CommandDescriptor.States"/>. Set on the display/render path only; null
-    /// on execution, on stateless buttons and for commands that declare no states.
+    /// through <see cref="CommandDescriptor.States"/>. Set on the display/render path and when the
+    /// host asks <see cref="IButtonStateCommand.GetButtonState"/>; null on execution, on stateless
+    /// buttons and for commands that declare no states.
     /// Additive since SDK 1.21.0.
     /// </summary>
     public string? StateName { get; init; }
