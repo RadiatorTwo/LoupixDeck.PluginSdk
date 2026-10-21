@@ -7,9 +7,9 @@ namespace LoupixDeck.PluginSdk;
 /// </summary>
 /// <remarks>
 /// <para>Nothing is polled. The host asks only when a button may show the wrong state: when the
-/// command is put on a button, when the button editor closes, when the plugin is loaded, and when
-/// the plugin calls <see cref="IPluginHost.RefreshButtonStates"/> because its data changed (for
-/// example on an event from the controlled application).</para>
+/// command is put on a button, when the button editor closes, and when the plugin calls
+/// <see cref="IPluginHost.RefreshButtonStates"/> because its data changed — call it once the data
+/// is first available (for example after connecting) and on every change after that.</para>
 /// <para>Additive since SDK 1.34.0. An older host never calls <see cref="GetButtonState"/>; drive
 /// the buttons with <see cref="IPluginHost.SetActiveButtonState"/> there instead.</para>
 /// </remarks>
