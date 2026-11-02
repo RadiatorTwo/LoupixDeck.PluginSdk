@@ -58,4 +58,17 @@ public sealed class CommandContext
     /// Additive since SDK 1.26.0.
     /// </summary>
     public string? ButtonKey { get; init; }
+
+    /// <summary>
+    /// The segment of a split Loupedeck CT wheel screen the command is bound to (see
+    /// <see cref="WheelSplitMode"/>). Set when the user presses that segment, which runs
+    /// <see cref="IPluginCommand.Execute"/> with <see cref="ButtonTargets.RotaryEncoder"/> as the
+    /// target, the wheel's rotary index as <see cref="SourceIndex"/> and a <see cref="ButtonKey"/> of
+    /// its own per segment. Also set on the render path of a live text or image layer placed on that
+    /// segment's canvas. The canvas is the whole wheel screen; the host clips it to the segment.
+    /// <para>Null everywhere else: on an unsplit wheel, for the wheel's rotate commands (turning is
+    /// shared by all segments) and on every other control.</para>
+    /// Additive since SDK 1.35.0.
+    /// </summary>
+    public WheelSegmentInfo? WheelSegment { get; init; }
 }
