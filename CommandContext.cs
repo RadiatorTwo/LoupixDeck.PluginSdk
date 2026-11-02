@@ -67,7 +67,8 @@ public sealed class CommandContext
     /// its own per segment. Also set on the render path of a live text or image layer placed on that
     /// segment's canvas. The canvas is the whole wheel screen; the host clips it to the segment.
     /// <para>Null everywhere else: on an unsplit wheel, for the wheel's rotate commands (turning is
-    /// shared by all segments) and on every other control.</para>
+    /// shared by all segments), for live layers on the split wheel's all-segments surface and on
+    /// every other control.</para>
     /// Additive since SDK 1.35.0.
     /// </summary>
     public WheelSegmentInfo? WheelSegment { get; init; }
