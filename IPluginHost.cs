@@ -146,4 +146,15 @@ public interface IPluginHost
     /// in SDK 1.34; on an older 1.x host the call throws <see cref="MissingMethodException"/>.
     /// </summary>
     void RefreshButtonStates(string commandName);
+
+    /// <summary>
+    /// Tells the host whether the plugin can currently do its work, for example whether it is
+    /// connected to the application it controls. While a plugin is unavailable, the host draws
+    /// every touch button bound to one of its commands dimmed and marked with a "disconnected"
+    /// symbol; the buttons keep their content and still execute when pressed. A plugin is
+    /// available until it says otherwise, and the mark is cleared when the plugin is unloaded.
+    /// Safe to call from any thread; repeating the current value does nothing. Added in SDK 1.36;
+    /// on an older 1.x host the call throws <see cref="MissingMethodException"/>.
+    /// </summary>
+    void SetAvailable(bool available);
 }
