@@ -157,4 +157,15 @@ public interface IPluginHost
     /// on an older 1.x host the call throws <see cref="MissingMethodException"/>.
     /// </summary>
     void SetAvailable(bool available);
+
+    /// <summary>
+    /// Asks the host to rebuild the menus it built from this plugin's
+    /// <see cref="IMenuContributor.GetMenuNodes"/>, because what they list has changed — for
+    /// example the application the plugin controls connected, or its scenes or devices changed.
+    /// The host calls <see cref="IMenuContributor.GetMenuNodes"/> again off the calling thread and
+    /// keeps the user's selection in the command list. Calls in quick succession are merged into
+    /// one rebuild. Safe to call from any thread. Added in SDK 1.36; on an older 1.x host the call
+    /// throws <see cref="MissingMethodException"/>.
+    /// </summary>
+    void RequestMenuRefresh();
 }
