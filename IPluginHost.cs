@@ -59,6 +59,17 @@ public interface IPluginHost
     /// enabling command chaining across plugin boundaries.</summary>
     void ExecuteCommand(string command);
 
+    /// <summary>
+    /// Executes the command <paramref name="name"/> with the given parameter values through the
+    /// host's command pipeline. Unlike <see cref="ExecuteCommand(string)"/>, nothing is parsed:
+    /// each value reaches <see cref="CommandContext.Parameters"/> exactly as passed, including
+    /// commas, parentheses, <c>&amp;&amp;</c>, leading or trailing spaces and line breaks. A null
+    /// value arrives as an empty string. Use it whenever a value comes from the user or from
+    /// another application. Added in SDK 1.38; on an older 1.x host the call throws
+    /// <see cref="MissingMethodException"/>.
+    /// </summary>
+    void ExecuteCommand(string name, IReadOnlyList<string> parameters);
+
     /// <summary>Opens a folder navigation view on the touch screen.</summary>
     void OpenFolder(IFolderProvider provider);
 
